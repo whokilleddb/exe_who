@@ -119,6 +119,7 @@ fn main(){
             }
         };
 
+        println!("[i] Received PE Size: {}", pe_buf.len());
 
     }
 
