@@ -1,8 +1,11 @@
 use core::ffi::c_void;
 use crate::error::AppError;
+use crate::user_struct::*;
+use windows::Win32::Foundation::GetLastError;
 use windows::Win32::System::SystemServices::*;
 use windows::Win32::System::Diagnostics::Debug::*;
 use ntapi::ntmmapi::NtUnmapViewOfSection;
+use windows::Win32::System::Memory::*;
 
 // Calculate Checksum
 fn __calculate_checksum(buff: &[u8]) -> u32 {
@@ -42,48 +45,10 @@ fn __print_hex(buff: &Vec<u8>) {
 }
 
 
-// Fetch NT Headers
-fn __get_nt_headers(buff: &[u8]) -> Result<IMAGE_NT_HEADERS32 , AppError> {
-    let max_offset: i32 = 1024;
-    let pe_offset: i32;
-    let __index: usize;
-    let dos_hdr: IMAGE_DOS_HEADER;
-    let nt_hdr: IMAGE_NT_HEADERS32;
-    let nt_hdr_vec: &[u8];
-
-    // Check for NULL
-    if buff.as_ptr().is_null() {
-        return Err(AppError { description: String::from("Empty Buffer in __get_nt_headers()") });
-    }
-
-    // Check Size
-    if buff.len() < 64 {
-        return Err(AppError { description: String::from("Insuffcient Header Data") });
-    }
-
-    dos_hdr = unsafe { std::ptr::read(buff.as_ptr() as *const IMAGE_DOS_HEADER)};
-    pe_offset = dos_hdr.e_lfanew;
-
-    if pe_offset > max_offset {
-        return Err(AppError { description: String::from("Size of e_lfanew > 1024") });
-    }
-
-    __index = usize::try_from(pe_offset).unwrap_or(pe_offset as usize);
-    nt_hdr_vec = &buff[__index..];
-
-    nt_hdr = unsafe { std::ptr::read(nt_hdr_vec.as_ptr() as *const IMAGE_NT_HEADERS32)};
-    if nt_hdr.Signature != IMAGE_NT_SIGNATURE {
-        return Err(AppError { description: String::from("Invalid NT Header Signature") });
-    }
-
-    Ok(nt_hdr.clone())
-}
-
-
 // Return Data Directory for executable
-fn __fetch_data_dir(buff: &[u8], dir_id: IMAGE_DIRECTORY_ENTRY) -> Result<IMAGE_DATA_DIRECTORY, AppError> {
-    let nt_hdr: IMAGE_NT_HEADERS32;
-    let optional_hdr: IMAGE_OPTIONAL_HEADER32;
+fn __fetch_data_dir(pe_header: &PeHeaders, dir_id: IMAGE_DIRECTORY_ENTRY) -> Result<IMAGE_DATA_DIRECTORY, AppError> {
+    let nt_hdr = pe_header.nt_hdr;
+    let optional_hdr = nt_hdr.OptionalHeader;
     let data_directory: IMAGE_DATA_DIRECTORY;
     let dir_index: usize = dir_id.0 as usize;
 
@@ -91,17 +56,6 @@ fn __fetch_data_dir(buff: &[u8], dir_id: IMAGE_DIRECTORY_ENTRY) -> Result<IMAGE_
         return Err(AppError {description: String::from("Invalid Directory Entry Count")});
     }
 
-    // Get NT Headers
-    nt_hdr = match __get_nt_headers(buff){
-        Ok(val)=>val,
-        Err(e) => {
-            return Err(e);
-        },
-    }; 
-
-    // Get Optional Headers
-    optional_hdr = nt_hdr.OptionalHeader;
-    //println!("{:#?}", optional_hdr);
     // Get Directory Entries
     println!("[i] Fetching Data Directory Entry: {}", dir_index);
     data_directory = optional_hdr.DataDirectory[dir_index];
@@ -115,54 +69,117 @@ fn __fetch_data_dir(buff: &[u8], dir_id: IMAGE_DIRECTORY_ENTRY) -> Result<IMAGE_
 }
 
 
+// // Fix Import Address Table
+// fn __fix_iat(module_ptr: &[u8]) -> bool {
+//     let lib_desc: IMAGE_IMPORT_DESCRIPTOR;
+//     let import_dir: IMAGE_DATA_DIRECTORY = match __fetch_data_dir(module_ptr, IMAGE_DIRECTORY_ENTRY_IMPORT){
+//         Ok(val) => val,
+//         Err(e) => {
+//             return false;
+//         }
+//     };
+
+//     let maxsize: usize = import_dir.Size as usize;
+//     let imp_va: u32 = import_dir.VirtualAddress;
+    
+//     let mut i: usize = 0;
+//     let struct_size = std::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>();
+//     while i < maxsize {
+//         lib_desc = 
+//         i = i + struct_size;
+//     }
+//     true
+// }
+
+
+
 // Run PE file
 pub fn load_pe(mut pe_buf: Vec<u8>)->Result<(), AppError> {
-    let checksum: u32;
-    let _size: usize = pe_buf.len();
-    let image_nt_headers: IMAGE_NT_HEADERS32;
-    let reloc_dir: IMAGE_DATA_DIRECTORY;
-    
-    // local Scope 
-    {
-        checksum = __calculate_checksum(&pe_buf);
-    }
-    
-    // Check for PE signature
-    if pe_buf[0] != 77 && pe_buf[1] != 90 {
-        return Err(AppError{description: String::from("Invalid PE Signature")});
-    }
+    let mut pe_headers: PeHeaders = PeHeaders::new();
 
-    println!("[i] PE Size: {}", pe_buf.len());
-    println!("[i] Checksum: {}", checksum);
-
-    // Fetch NT headers    
-    image_nt_headers =  match __get_nt_headers(&pe_buf){
-        Ok(val)=>val,
+    // Populate Headers
+    match pe_headers.populate(pe_buf.clone()) {
+        Ok(_res) => _res,
         Err(e) => {
             return Err(e);
-        },
-    }; 
+        }
+    }
     
-    println!("[i] Fetched NT Headers");
+    let mut nt_hdr = pe_headers.nt_hdr;
+    let _section_hdr_arr = pe_headers.section_hdr_arr.clone();
+
+    // Print Headers
+    pe_headers.print_headers();
+    
+    // // PE checksum 
+    // {
+    //     checksum = __calculate_checksum(&pe_buf);
+    // }
+    // println!("[i] Checksum: {}", checksum);
+
+    println!("[i] PE Size: {}", pe_buf.len());
     
     // Fetch BaseRelocation Table Address
-    reloc_dir = match __fetch_data_dir(&pe_buf, IMAGE_DIRECTORY_ENTRY_BASERELOC) {
+    let reloc_dir = match __fetch_data_dir(&pe_headers, IMAGE_DIRECTORY_ENTRY_BASERELOC) {
         Ok(val) => val,
         Err(e) => {
             return Err(e);
         }
     };
     println!("[i] Fetched BaseRelocation Table Address");
+    let preferaddr = nt_hdr.OptionalHeader.ImageBase;
     
     // Unmap memory
-    // {
-    //     let _process_handle: *mut c_void = &mut (-1);
-    //     let _base_addr: *mut c_void = &mut (image_nt_headers.OptionalHeader.ImageBase);
-    //     unsafe {
-    //         NtUnmapViewOfSection1(_process_handle, _base_addr);
-    //     }
-    // }
+    {
+        let _process_handle: *mut ntapi::winapi::ctypes::c_void = (-1i32) as *mut ntapi::winapi::ctypes::c_void;
+        let _base_addr: *mut ntapi::winapi::ctypes::c_void = preferaddr as *mut ntapi::winapi::ctypes::c_void;
+        unsafe {
+            NtUnmapViewOfSection(_process_handle, _base_addr);
+        }
+    }
+
+    println!("[i] Trying to Allocate Memory");
+    // Allocate Memory
+    let pimagebase = unsafe{
+        let _pimagebase = VirtualAlloc(
+            Some(preferaddr as *const c_void),
+            nt_hdr.OptionalHeader.SizeOfImage as usize,
+            MEM_COMMIT | MEM_RESERVE, 
+            PAGE_EXECUTE_READWRITE
+        );
     
-   
+        if _pimagebase.is_null(){    
+            let _pimagebase = VirtualAlloc(
+                    Some(std::ptr::null() as *const c_void),
+                    nt_hdr.OptionalHeader.SizeOfImage as usize,
+                    MEM_COMMIT | MEM_RESERVE, 
+                    PAGE_EXECUTE_READWRITE
+                );
+            
+            if _pimagebase.is_null() {
+                    return Err( AppError {description: format!("VirtualAlloc() failed: {:?}", GetLastError())});
+                }
+            }
+        
+        // let __pimagebase = _pimagebase as *const u8;
+        // std::slice::from_raw_parts(__pimagebase, nt_hdr.OptionalHeader.SizeOfImage as usize)
+        _pimagebase // *mut c_void
+    };
+    
+    // let section_arr = __get_section_hdr_arr(&pe_buf);
+    println!("[i] Filling memory block with PE Data");
+
+    nt_hdr.OptionalHeader.ImageBase = pimagebase as u32;
+    unsafe {
+        std::ptr::copy_nonoverlapping(
+            pe_buf.as_mut_ptr(), 
+            pimagebase as *mut u8, 
+            nt_hdr.OptionalHeader.SizeOfHeaders as usize 
+        );
+    }
+    
+    // // Map Section header
+    // let section_header_add: Vec<IMAGE_SECTION_HEADER> = 
+
     Ok(())
 }

