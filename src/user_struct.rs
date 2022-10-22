@@ -1,10 +1,11 @@
+#![allow(dead_code)]
 use crate::error::AppError;
 use windows::Win32::System::SystemServices::*;
 use windows::Win32::System::Diagnostics::Debug::*;
 
 pub struct PeHeaders {
     pub dos_hdr:    IMAGE_DOS_HEADER,
-    pub nt_hdr:     IMAGE_NT_HEADERS32,
+    pub nt_hdr:     IMAGE_NT_HEADERS64,
     pub section_hdr_arr: Vec<IMAGE_SECTION_HEADER>,
 }
 
@@ -12,7 +13,7 @@ impl PeHeaders {
     pub fn new() -> PeHeaders {
         let pe_hdr = PeHeaders {
                 dos_hdr: IMAGE_DOS_HEADER::default(),
-                nt_hdr: IMAGE_NT_HEADERS32::default(),
+                nt_hdr: IMAGE_NT_HEADERS64::default(),
                 section_hdr_arr: Vec::new(),
             };
         pe_hdr
@@ -22,7 +23,7 @@ impl PeHeaders {
         let max_nt_hdr_offset: usize = 1024; 
         let nt_hdr_offset: usize;
         let pe_dos_hdr: IMAGE_DOS_HEADER;
-        let pe_nt_hdr: IMAGE_NT_HEADERS32;
+        let pe_nt_hdr: IMAGE_NT_HEADERS64;
         let pe_file_hdr: IMAGE_FILE_HEADER;
         let size_of_optional_hdr: usize;
         let number_of_sections: usize;
@@ -54,7 +55,7 @@ impl PeHeaders {
         // Get NT Header
         pe_nt_hdr = unsafe {
             let __nt_hdr_vec = &pe_buf[nt_hdr_offset..];
-            std::ptr::read(__nt_hdr_vec.as_ptr() as *const IMAGE_NT_HEADERS32)
+            std::ptr::read(__nt_hdr_vec.as_ptr() as *const IMAGE_NT_HEADERS64)
         };
 
         if pe_nt_hdr.Signature != IMAGE_NT_SIGNATURE {
@@ -101,12 +102,12 @@ impl PeHeaders {
         let dos_hdr: IMAGE_DOS_HEADER = self.dos_hdr;
         println!("======================= DOS HEADER =======================");
         println!("[i] Magic Number\t\t\t{:#x}", dos_hdr.e_magic);
-        println!("[i] Bytes on last page of file\t\t{}", dos_hdr.e_cblp); 
+        println!("[i] Bytes on last page of file\t\t{:#x}", dos_hdr.e_cblp); 
         println!("[i] Pages in file\t\t\t{}", dos_hdr.e_cp); 
         println!("[i] Relocations\t\t\t\t{:#x}", dos_hdr.e_crlc); 
         println!("[i] Size of header in paragraphs\t{}", dos_hdr.e_cparhdr); 
-        println!("[i] Minimum extra paragraphs needed\t{}", dos_hdr.e_minalloc); 
-        println!("[i] Maximum extra paragraphs needed\t{}", dos_hdr.e_maxalloc); 
+        println!("[i] Minimum extra paragraphs needed\t{:#x}", dos_hdr.e_minalloc); 
+        println!("[i] Maximum extra paragraphs needed\t{:#x}", dos_hdr.e_maxalloc); 
         println!("[i] Initial SS value\t\t\t{:#x}", dos_hdr.e_ss); 
         println!("[i] Initial SP value\t\t\t{:#x}",dos_hdr.e_sp); 
         println!("[i] Checksum\t\t\t\t{:#x}", dos_hdr.e_csum); 
@@ -118,7 +119,7 @@ impl PeHeaders {
         println!("[i] OEM identifier\t\t\t{}", dos_hdr.e_oemid);
         println!("[i] OEM information\t\t\t{}", dos_hdr.e_oeminfo); 
         println!("[i] Reserved words\t\t\t{:?}", dos_hdr.e_res2); 
-        println!("[i] File address of new exe header\t{}", {let offset = dos_hdr.e_lfanew; offset}); 
+        println!("[i] File address of new exe header\t{:#x}", {let offset = dos_hdr.e_lfanew; offset}); 
         println!();
     }
 
@@ -129,7 +130,7 @@ impl PeHeaders {
         println!("[i] Signature\t\t\t\t{}", self.nt_hdr.Signature);
         println!("[i] Machine Type\t\t\t{:#x}", file_hdr.Machine.0);
         println!("[i] Number of Sections\t\t\t{}", file_hdr.NumberOfSections);
-        println!("[i] Time Date Stamp\t\t\t{}", file_hdr.TimeDateStamp);
+        println!("[i] Time Date Stamp\t\t\t{:#x}", file_hdr.TimeDateStamp);
         println!("[i] Pointer to Symbol Table\t\t{:#x}", file_hdr.PointerToSymbolTable);
         println!("[i] Number of Symbols\t\t\t{}", file_hdr.NumberOfSymbols);
         println!("[i] Size of Optional Header\t\t{}",file_hdr.SizeOfOptionalHeader);
@@ -146,18 +147,17 @@ impl PeHeaders {
         println!("[i] Major Linker Version\t\t{:#x}", opt_header.MajorLinkerVersion);
         println!("[i] Minor Linker Version\t\t{:#x}", opt_header.MinorLinkerVersion);
         println!("[i] Size of Code\t\t\t{:#x}", opt_header.SizeOfCode);
-        println!("[i] Size of Initialized Data\t\t{}", opt_header.SizeOfInitializedData);
-        println!("[i] Size of Uninitialized Data\t\t{}", opt_header.SizeOfUninitializedData);
+        println!("[i] Size of Initialized Data\t\t{:#x}", opt_header.SizeOfInitializedData);
+        println!("[i] Size of Uninitialized Data\t\t{:#x}", opt_header.SizeOfUninitializedData);
         println!("[i] Address of Entry Point\t\t{:#x}", opt_header.AddressOfEntryPoint);
         println!("[i] Base of Code\t\t\t{:#x}", opt_header.BaseOfCode);
-        println!("[i] Base of Data\t\t\t{:#x}", opt_header.BaseOfData);
-        println!("[i] Image Base\t\t\t\t{:#x}", opt_header.ImageBase);
-        println!("[i] Section Alignment\t\t\t{}",opt_header.SectionAlignment);
-        println!("[i] File Alignment\t\t\t{}", opt_header.FileAlignment);
-        println!("[i] Major Operating System Version\t{}", opt_header.MajorOperatingSystemVersion);
-        println!("[i] Minor Operating System Version\t{}", opt_header.MinorOperatingSystemVersion);
-        println!("[i] Major Image Version\t\t\t{}", opt_header.MajorImageVersion);
-        println!("[i] Minor Image Version\t\t\t{}", opt_header.MinorImageVersion);
+        println!("[i] Image Base\t\t\t\t{:#x}", {let img_base = opt_header.ImageBase; img_base});
+        println!("[i] Section Alignment\t\t\t{:#x}",opt_header.SectionAlignment);
+        println!("[i] File Alignment\t\t\t{:#x}", opt_header.FileAlignment);
+        println!("[i] Major Operating System Version\t{:#x}", opt_header.MajorOperatingSystemVersion);
+        println!("[i] Minor Operating System Version\t{:#x}", opt_header.MinorOperatingSystemVersion);
+        println!("[i] Major Image Version\t\t\t{:#x}", opt_header.MajorImageVersion);
+        println!("[i] Minor Image Version\t\t\t{:#x}", opt_header.MinorImageVersion);
         println!("[i] Major Subsystem Version\t\t{}", opt_header.MajorSubsystemVersion);
         println!("[i] Minor Subsystem Version\t\t{}", opt_header.MinorSubsystemVersion);
         println!("[i] Win32 Version\t\t\t{}", opt_header.Win32VersionValue);
@@ -166,10 +166,10 @@ impl PeHeaders {
         println!("[i] Checksum\t\t\t\t{}", opt_header.CheckSum);
         println!("[i] Subsystem\t\t\t\t{}", opt_header.Subsystem.0);
         println!("[i] DLL Characteristics\t\t\t{:#x}", opt_header.DllCharacteristics.0);
-        println!("[i] Size Of StackReserve\t\t{:#x}",  opt_header.SizeOfStackReserve);
-        println!("[i] Size Of Stack Commit\t\t{:#x}", opt_header.SizeOfStackCommit);
-        println!("[i] Size Of Heap Reserve\t\t{:#x}", opt_header.SizeOfHeapReserve);
-        println!("[i] Size Of HeapCommit\t\t\t{:#x}", opt_header.SizeOfHeapCommit);
+        println!("[i] Size Of StackReserve\t\t{:#x}", {let s_stck_res = opt_header.SizeOfStackReserve; s_stck_res});
+        println!("[i] Size Of Stack Commit\t\t{:#x}", {let s_stck_com = opt_header.SizeOfStackCommit; s_stck_com});
+        println!("[i] Size Of Heap Reserve\t\t{:#x}", {let s_heap_res = opt_header.SizeOfHeapReserve; s_heap_res});
+        println!("[i] Size Of HeapCommit\t\t\t{:#x}", {let s_heap_com = opt_header.SizeOfHeapCommit; s_heap_com});
         println!("[i] Loader Flags\t\t\t{}", opt_header.LoaderFlags);
         println!("[i] Number Of Rva And Sizes\t\t{}", opt_header.NumberOfRvaAndSizes);
         println!("[i] Data Directory Entries:");

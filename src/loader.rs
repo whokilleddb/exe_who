@@ -6,6 +6,7 @@ use windows::Win32::System::SystemServices::*;
 use windows::Win32::System::Diagnostics::Debug::*;
 use ntapi::ntmmapi::NtUnmapViewOfSection;
 use windows::Win32::System::Memory::*;
+use windows::Win32::UI::WindowsAndMessaging::EnumThreadWindows;
 
 // Calculate Checksum
 fn __calculate_checksum(buff: &[u8]) -> u32 {
@@ -94,7 +95,7 @@ fn __fetch_data_dir(pe_header: &PeHeaders, dir_id: IMAGE_DIRECTORY_ENTRY) -> Res
 
 
 // Run PE file
-pub fn load_pe(mut pe_buf: Vec<u8>)->Result<(), AppError> {
+pub fn load_pe(pe_buf: Vec<u8>)->Result<(), AppError> {
     let mut pe_headers: PeHeaders = PeHeaders::new();
 
     // Populate Headers
@@ -106,10 +107,9 @@ pub fn load_pe(mut pe_buf: Vec<u8>)->Result<(), AppError> {
     }
     
     let mut nt_hdr = pe_headers.nt_hdr;
-    let _section_hdr_arr = pe_headers.section_hdr_arr.clone();
-
+    let section_hdr_arr = pe_headers.section_hdr_arr.clone();
     // Print Headers
-    pe_headers.print_headers();
+    // pe_headers.print_headers();
     
     // // PE checksum 
     // {
@@ -120,7 +120,7 @@ pub fn load_pe(mut pe_buf: Vec<u8>)->Result<(), AppError> {
     println!("[i] PE Size: {}", pe_buf.len());
     
     // Fetch BaseRelocation Table Address
-    let reloc_dir = match __fetch_data_dir(&pe_headers, IMAGE_DIRECTORY_ENTRY_BASERELOC) {
+    let _reloc_dir = match __fetch_data_dir(&pe_headers, IMAGE_DIRECTORY_ENTRY_BASERELOC) {
         Ok(val) => val,
         Err(e) => {
             return Err(e);
@@ -141,22 +141,22 @@ pub fn load_pe(mut pe_buf: Vec<u8>)->Result<(), AppError> {
     println!("[i] Trying to Allocate Memory");
     // Allocate Memory
     let pimagebase = unsafe{
-        let _pimagebase = VirtualAlloc(
+        let mut _pimagebase = VirtualAlloc(
             Some(preferaddr as *const c_void),
             nt_hdr.OptionalHeader.SizeOfImage as usize,
             MEM_COMMIT | MEM_RESERVE, 
             PAGE_EXECUTE_READWRITE
         );
     
-        if _pimagebase.is_null(){    
-            let _pimagebase = VirtualAlloc(
+        if 0 == _pimagebase as u32{  
+            _pimagebase = VirtualAlloc(
                     Some(std::ptr::null() as *const c_void),
                     nt_hdr.OptionalHeader.SizeOfImage as usize,
                     MEM_COMMIT | MEM_RESERVE, 
                     PAGE_EXECUTE_READWRITE
                 );
             
-            if _pimagebase.is_null() {
+            if 0 == _pimagebase as u32 {
                     return Err( AppError {description: format!("VirtualAlloc() failed: {:?}", GetLastError())});
                 }
             }
@@ -166,20 +166,46 @@ pub fn load_pe(mut pe_buf: Vec<u8>)->Result<(), AppError> {
         _pimagebase // *mut c_void
     };
     
-    // let section_arr = __get_section_hdr_arr(&pe_buf);
+    println!("[i] VirtualAlloc() Address\t{:p}", pimagebase);
+    println!("[i] Source Address\t\t{:p}", pe_buf.as_ptr());
     println!("[i] Filling memory block with PE Data");
 
-    nt_hdr.OptionalHeader.ImageBase = pimagebase as u32;
+    nt_hdr.OptionalHeader.ImageBase = pimagebase as u64;
+
     unsafe {
         std::ptr::copy_nonoverlapping(
-            pe_buf.as_mut_ptr(), 
+            pe_buf.as_ptr(), 
             pimagebase as *mut u8, 
             nt_hdr.OptionalHeader.SizeOfHeaders as usize 
         );
     }
+
+    // let __pimagebase = pimagebase as *const u8;
+    // let mut  _new_arr = unsafe {Vec::from(std::slice::from_raw_parts(__pimagebase, nt_hdr.OptionalHeader.SizeOfImage as usize)) };
+    println!("[i] Filling Section Headers");
+    for section_hdr in section_hdr_arr {
+        let vir_addr = section_hdr.VirtualAddress;
+        let ptr_raw_data = section_hdr.PointerToRawData as usize;
+        let size_to_copy = section_hdr.SizeOfRawData as usize;
+        let src = (pe_buf.as_ptr() as u64 + u64::try_from(ptr_raw_data).unwrap_or(ptr_raw_data as u64)) as *const u8;
+        let dst = (pimagebase as u64 + u64::try_from(vir_addr).unwrap_or(vir_addr as u64)) as *mut u8;
+
+        println!("[i] Copying {} Section from {:p}->{:p}", String::from_utf8_lossy(&section_hdr.Name), src, dst);
+        
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                src,
+                dst,
+                size_to_copy
+            )
+        } 
+    }
+
+    let retaddr = pimagebase as u64 
+                    + u64::try_from(nt_hdr.OptionalHeader.AddressOfEntryPoint)
+                    .unwrap_or(nt_hdr.OptionalHeader.AddressOfEntryPoint as u64);
     
-    // // Map Section header
-    // let section_header_add: Vec<IMAGE_SECTION_HEADER> = 
+    // EnumThreadWindows(0u32,,LPARAM(0));
 
     Ok(())
 }
