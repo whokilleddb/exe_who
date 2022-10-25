@@ -93,7 +93,7 @@ impl PeHeaders {
 
         self.dos_hdr = pe_dos_hdr;
         self.nt_hdr = pe_nt_hdr;
-        self.section_hdr_arr = pe_section_hdr_arr.clone();
+        self.section_hdr_arr = pe_section_hdr_arr;
         Ok(())
     }
 

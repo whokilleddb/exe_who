@@ -1,9 +1,14 @@
 use core::ffi::c_void;
+use std::ffi::CStr;
 use crate::error::AppError;
+use  windows::core::PCSTR;
 use crate::user_struct::*;
-use windows::Win32::Foundation::GetLastError;
+use windows::Win32::UI::WindowsAndMessaging::WNDENUMPROC;
+use windows::Win32::Foundation::{GetLastError, LPARAM};
+use windows::Win32::System::WindowsProgramming::IMAGE_THUNK_DATA64;
 use windows::Win32::System::SystemServices::*;
 use windows::Win32::System::Diagnostics::Debug::*;
+use windows::Win32::System::LibraryLoader::{GetProcAddress, LoadLibraryA};
 use ntapi::ntmmapi::NtUnmapViewOfSection;
 use windows::Win32::System::Memory::*;
 use windows::Win32::UI::WindowsAndMessaging::EnumThreadWindows;
@@ -71,26 +76,80 @@ fn __fetch_data_dir(pe_header: &PeHeaders, dir_id: IMAGE_DIRECTORY_ENTRY) -> Res
 
 
 // // Fix Import Address Table
-// fn __fix_iat(module_ptr: &[u8]) -> bool {
-//     let lib_desc: IMAGE_IMPORT_DESCRIPTOR;
-//     let import_dir: IMAGE_DATA_DIRECTORY = match __fetch_data_dir(module_ptr, IMAGE_DIRECTORY_ENTRY_IMPORT){
-//         Ok(val) => val,
-//         Err(e) => {
-//             return false;
-//         }
-//     };
-
-//     let maxsize: usize = import_dir.Size as usize;
-//     let imp_va: u32 = import_dir.VirtualAddress;
+fn __fix_iat(imgbaseptr:u64, module_ptr: Vec<u8>) -> Result<(), AppError> {
+    let mut pe_hdrs: PeHeaders = PeHeaders::new();
+    match pe_hdrs.populate(module_ptr){
+        Ok(_val) => _val,
+        Err(e) => {
+            return Err(e);
+        }
+    };
     
-//     let mut i: usize = 0;
-//     let struct_size = std::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>();
-//     while i < maxsize {
-//         lib_desc = 
-//         i = i + struct_size;
-//     }
-//     true
-// }
+    let imports_dir: IMAGE_DATA_DIRECTORY = match __fetch_data_dir(&pe_hdrs, IMAGE_DIRECTORY_ENTRY_IMPORT) {
+        Ok(val) => val,
+        Err(e) => {
+            return Err(e);
+        }
+    };
+    
+    let virtual_addr = imports_dir.VirtualAddress as usize;
+    let max_size = imports_dir.Size as usize;
+
+
+    let mut parsed_size: usize = 0;
+    while parsed_size < max_size {
+        // lib_desc = (IMAGE_IMPORT_DESCRIPTOR*)(impAddr + parsedSize + (ULONG_PTR)modulePtr);
+        let _offset = virtual_addr + parsed_size + imgbaseptr as usize;
+        let lib_desc: IMAGE_IMPORT_DESCRIPTOR = unsafe {std::ptr::read(_offset as *const IMAGE_IMPORT_DESCRIPTOR)};
+        unsafe{
+            if lib_desc.Anonymous.OriginalFirstThunk == 0 && lib_desc.FirstThunk == 0 {
+                break;
+            }
+        }
+
+        let _offset = imgbaseptr as usize + lib_desc.Name as usize;
+        // let lib_name = std::ptr::read(_offset as *const u8); 
+        // let lib_name = match std::str::from_utf8(&lib_name) {
+        //     Ok(res) => res,
+        //     Err(e) => {
+        //         return Err(AppError{description:String::from("Failed to get lib_name")});
+        //     }
+        // };
+        let lib_name = unsafe { CStr::from_ptr(_offset as *const i8).to_str().unwrap().to_owned() };
+        println!("[i] Library\t{}",lib_name);
+        let call_via = lib_desc.FirstThunk as usize;
+        let mut thunk_addr = unsafe { lib_desc.Anonymous.OriginalFirstThunk as usize};
+        
+        if thunk_addr == 0 {
+            thunk_addr = lib_desc.FirstThunk as usize;
+        }
+
+        let offset_field = 0;
+        let offset_thunk = 0;
+        loop {
+            let field_offset = offset_field + call_via + imgbaseptr as usize;
+            let orign_offset = offset_thunk + thunk_addr + imgbaseptr as usize;
+            let field_thunk = unsafe {std::ptr::read(field_offset as *const IMAGE_THUNK_DATA64)};
+            let orign_thunk = unsafe {std::ptr::read(orign_offset as *const IMAGE_THUNK_DATA64)};
+
+            let orign_ordinal = unsafe{orign_thunk.u1.Ordinal};
+            if 0==(orign_ordinal & IMAGE_ORDINAL_FLAG64) {
+                let mut _lib_handle_bytes: Vec<u8> = lib_name.clone().into_bytes();
+                _lib_handle_bytes.push(0);
+                let lib_handle =  match unsafe{LoadLibraryA(PCSTR(_lib_handle_bytes.as_ptr() as *const u8))} {
+                        Ok(val) => val,
+                        Err(_e) => {
+                            return Err(AppError{description: String::from("Failed to fetch Address of Library")});
+                        }
+                    };
+
+            }
+            break;
+        }
+        parsed_size = parsed_size + std::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>();
+    };
+    Ok(())
+}
 
 
 
@@ -201,11 +260,30 @@ pub fn load_pe(pe_buf: Vec<u8>)->Result<(), AppError> {
         } 
     }
 
+    let ret_vec = unsafe{
+        std::slice::from_raw_parts(pimagebase as *const u8, 
+            nt_hdr.OptionalHeader.SizeOfHeaders as usize).to_vec()
+        };
+
+    match __fix_iat(pimagebase as u64, ret_vec){
+        Ok(_res) => _res,
+        Err(e) => {
+            eprintln!("[!] Failed to fix IAT");
+            return Err(e);
+        }
+    };
+    println!("[i] Fixed IAT");
+
     let retaddr = pimagebase as u64 
                     + u64::try_from(nt_hdr.OptionalHeader.AddressOfEntryPoint)
                     .unwrap_or(nt_hdr.OptionalHeader.AddressOfEntryPoint as u64);
     
-    // EnumThreadWindows(0u32,,LPARAM(0));
 
+
+    let fn_pointer: WNDENUMPROC = unsafe { std::mem::transmute(retaddr) };
+    let res = unsafe {EnumThreadWindows(0u32,fn_pointer,LPARAM(0)) };
+    if !res.as_bool() {
+        return Err( AppError{description: String::from("EnumThreadWindow() Failed")});
+    }
     Ok(())
 }
