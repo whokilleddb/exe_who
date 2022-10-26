@@ -77,6 +77,14 @@ fn __fetch_data_dir(pe_header: &PeHeaders, dir_id: IMAGE_DIRECTORY_ENTRY) -> Res
 
 // // Fix Import Address Table
 fn __fix_iat(imgbaseptr:u64, module_ptr: Vec<u8>) -> Result<(), AppError> {
+    // Closure to find LoadLibraryA value
+    let __load_library = |lib_to_load: String| {
+        let mut vec_to_load:Vec<u8> = lib_to_load.as_bytes().to_vec();
+        vec_to_load.push(0);
+        let lib_addr = unsafe{LoadLibraryA(PCSTR(vec_to_load.as_ptr() as *const u8))};
+        lib_addr
+    };
+
     let mut pe_hdrs: PeHeaders = PeHeaders::new();
     match pe_hdrs.populate(module_ptr){
         Ok(_val) => _val,
@@ -116,7 +124,7 @@ fn __fix_iat(imgbaseptr:u64, module_ptr: Vec<u8>) -> Result<(), AppError> {
         //     }
         // };
         let lib_name = unsafe { CStr::from_ptr(_offset as *const i8).to_str().unwrap().to_owned() };
-        println!("[i] Library\t{}",lib_name);
+        println!("[i] Library\t{}", lib_name);
         let call_via = lib_desc.FirstThunk as usize;
         let mut thunk_addr = unsafe { lib_desc.Anonymous.OriginalFirstThunk as usize};
         
@@ -127,25 +135,65 @@ fn __fix_iat(imgbaseptr:u64, module_ptr: Vec<u8>) -> Result<(), AppError> {
         let offset_field = 0;
         let offset_thunk = 0;
         loop {
-            let field_offset = offset_field + call_via + imgbaseptr as usize;
-            let orign_offset = offset_thunk + thunk_addr + imgbaseptr as usize;
-            let field_thunk = unsafe {std::ptr::read(field_offset as *const IMAGE_THUNK_DATA64)};
+            let mut field_offset = offset_field + call_via + imgbaseptr as usize;
+            let mut orign_offset = offset_thunk + thunk_addr + imgbaseptr as usize;
+            let mut field_thunk = unsafe {std::ptr::read(field_offset as *const IMAGE_THUNK_DATA64)};
             let orign_thunk = unsafe {std::ptr::read(orign_offset as *const IMAGE_THUNK_DATA64)};
-
             let orign_ordinal = unsafe{orign_thunk.u1.Ordinal};
-            if 0==(orign_ordinal & IMAGE_ORDINAL_FLAG64) {
-                let mut _lib_handle_bytes: Vec<u8> = lib_name.clone().into_bytes();
-                _lib_handle_bytes.push(0);
-                let lib_handle =  match unsafe{LoadLibraryA(PCSTR(_lib_handle_bytes.as_ptr() as *const u8))} {
-                        Ok(val) => val,
-                        Err(_e) => {
-                            return Err(AppError{description: String::from("Failed to fetch Address of Library")});
-                        }
-                    };
 
+            println!("Ordinal : {:#x}", orign_ordinal);
+
+            if 0 != (orign_ordinal & IMAGE_ORDINAL_FLAG64) {
+                let libr_addr = match __load_library(lib_name.clone()){
+                    Ok(val) => val,
+                    Err(e) => {
+                        let err = format!("Error Occured as: {} {:?}",e, unsafe{GetLastError()});
+                        return Err(AppError{description: err});
+                    }
+                };
+                
+                let mut lprocvec: Vec<u8> = unsafe{ CStr::from_ptr(orign_ordinal as *const i8).to_str().unwrap().to_owned().clone().as_bytes().to_vec() };
+                lprocvec.push(0);
+                let lprocname: PCSTR = PCSTR(lprocvec.as_ptr() as *const u8); 
+                let addr = match unsafe{GetProcAddress(libr_addr, lprocname)} {
+                    Some(val) => val as u64,
+                    None => {
+                        let err = format!("GetProcAddress() failed with error: {:?}", unsafe{GetLastError()});
+                        return Err(AppError{description: err});
+                    },
+                };
+                field_thunk.u1.Function = addr;
+                continue;
             }
+
+            unsafe{        
+                if field_thunk.u1.Function == 0 {
+                    break;
+                }
+            }
+
+            unsafe {
+                if field_thunk.u1.Function == orign_thunk.u1.Function {
+                    let _offset = imgbaseptr + orign_thunk.u1.AddressOfData;
+                    let by_name: IMAGE_IMPORT_BY_NAME = std::ptr::read(_offset as *const IMAGE_IMPORT_BY_NAME);
+                    let Name = CStr::from_ptr(by_name.Name.as_ptr() as *const std::os::raw::c_char).to_str().unwrap().to_owned().clone();
+                   // let lprocname: PCSTR = PCSTR::from_raw(Name);
+                    println!("{:#?}", Name);
+// /                    println!("{}", PCSTR.from_raw(&by_name.Name as *const u8).to_string().unwrap);
+                let chars_string_nul = by_name.Name.iter().chain(std::iter::once(&'\0')).collect::<String>();
+                if !chars_string_nul.is_ascii() {
+                    panic!("The character provided contains non-ASCII characters which are not supported.");
+                }
+                let pcstr = PCSTR::from_raw(chars_string_nul.as_ptr());
+
+                }
+            }
+
+            orign_offset = orign_offset + std::mem::size_of::<IMAGE_THUNK_DATA64>();
+            field_offset = field_offset + std::mem::size_of::<IMAGE_THUNK_DATA64>();
             break;
         }
+
         parsed_size = parsed_size + std::mem::size_of::<IMAGE_IMPORT_DESCRIPTOR>();
     };
     Ok(())
