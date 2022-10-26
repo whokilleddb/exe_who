@@ -141,8 +141,6 @@ fn __fix_iat(imgbaseptr:u64, module_ptr: Vec<u8>) -> Result<(), AppError> {
             let orign_thunk = unsafe {std::ptr::read(orign_offset as *const IMAGE_THUNK_DATA64)};
             let orign_ordinal = unsafe{orign_thunk.u1.Ordinal};
 
-            println!("Ordinal : {:#x}", orign_ordinal);
-
             if 0 != (orign_ordinal & IMAGE_ORDINAL_FLAG64) {
                 let libr_addr = match __load_library(lib_name.clone()){
                     Ok(val) => val,
@@ -176,16 +174,9 @@ fn __fix_iat(imgbaseptr:u64, module_ptr: Vec<u8>) -> Result<(), AppError> {
                 if field_thunk.u1.Function == orign_thunk.u1.Function {
                     let _offset = imgbaseptr + orign_thunk.u1.AddressOfData;
                     let by_name: IMAGE_IMPORT_BY_NAME = std::ptr::read(_offset as *const IMAGE_IMPORT_BY_NAME);
-                    let Name = CStr::from_ptr(by_name.Name.as_ptr() as *const std::os::raw::c_char).to_str().unwrap().to_owned().clone();
-                   // let lprocname: PCSTR = PCSTR::from_raw(Name);
-                    println!("{:#?}", Name);
-// /                    println!("{}", PCSTR.from_raw(&by_name.Name as *const u8).to_string().unwrap);
-                let chars_string_nul = by_name.Name.iter().chain(std::iter::once(&'\0')).collect::<String>();
-                if !chars_string_nul.is_ascii() {
-                    panic!("The character provided contains non-ASCII characters which are not supported.");
-                }
-                let pcstr = PCSTR::from_raw(chars_string_nul.as_ptr());
 
+                    println!("[i] Name:\t\t{:?}", by_name.Name);
+                    println!("{:?}", by_name);
                 }
             }
 

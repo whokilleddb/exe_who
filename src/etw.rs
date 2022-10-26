@@ -1,4 +1,5 @@
-use  windows::Win32::System::Memory::*;
+use enigo::Enigo;
+use windows::Win32::System::Memory::*;
 use windows::Win32::Storage::FileSystem::*;
 use windows::{core::*, Win32::Foundation::*};    
 
@@ -70,4 +71,31 @@ fn __new_ntdll_patch_etw()->Result<()>{
         return Err(Error::new(_err, _err.message()));
     }
     Ok(())
+}
+
+
+// Check for mouse pointer activity
+pub fn __check_mouse_pointer()->bool {
+    println!("[i] Checking User Cursor Activity");
+    // Check initial location
+    let initial_cursor_location: (i32, i32) = Enigo::mouse_location();
+    let ix = initial_cursor_location.0;
+    let iy = initial_cursor_location.1;
+    println!("[i] Inital Postion: {:?}", initial_cursor_location);
+
+    // Sleep for 10s
+    let duration = std::time::Duration::new(10,0);
+    std::thread::sleep(duration);
+
+    // Check  final location
+    let final_cursor_location: (i32, i32) = Enigo::mouse_location();
+    let fx = final_cursor_location.0;
+    let fy = final_cursor_location.1;
+    println!("[i] Final Position: {:?}", final_cursor_location);
+
+    if ix == fx || iy == fy || (fy-iy) == (fx-ix) {
+        eprintln!("[!] Sandbox Environment Suspected");
+        return false;
+    }
+    true
 }
