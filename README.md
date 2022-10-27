@@ -7,6 +7,8 @@ Compiling is as easy as:
 ```bash
 C:\Users\User\Codes\exe_who> cargo build --release
 ```
+![No PEs](https://github.com/whokilleddb/exe_who/blob/main/img/poc.png?raw=true)
+
 # Current Features
 - Patch ETW
 - Sandbox Detection
