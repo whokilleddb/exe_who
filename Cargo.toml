@@ -7,24 +7,20 @@ edition = "2021"
 
 [dependencies]
 url = "2.3.1"
-byteorder = "1.4.3"
-ntapi = "0.4.0"
+memexec = "0.2"
 enigo = "0.0.14"
+ctrlc = "3.2.3"
+walkdir = "2.2.9" 
+winapi = {version = "0.3.9", features =["processthreadsapi","memoryapi"]}
+kernel32-sys = "0.2.2"
+colored = "2.0.0"
 reqwest = { version = "0.11"}
 tokio = { version = "1", features = ["full"] }
 
 [dependencies.windows]
-version = "0.42.0"
+version = "0.43.0"
 features = [
-    "Win32_Security",
-    "Win32_Foundation",
-    "Win32_System_Memory",    
-    "Win32_System_Threading",  
-    "Win32_Storage_FileSystem",
-    "Win32_System_LibraryLoader", 
-    "Win32_System_WindowsProgramming", 
-    "Win32_System_SystemServices",
-    "Win32_System_Diagnostics_Debug",
-    "Win32_System_SystemInformation",
-    "Win32_UI_WindowsAndMessaging"
+    "Win32_System_Memory", 
+    "Win32_System_LibraryLoader",
+    "Win32_Foundation"
 ]

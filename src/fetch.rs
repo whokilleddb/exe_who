@@ -1,21 +1,22 @@
 use url::Url;
 use std::io::Write;
+use colored::Colorize;
 use crate::error::AppError;
-use std::convert::TryFrom;
-use std::io::{Error, ErrorKind};
 use reqwest::{self, header};
+use std::io::{Error, ErrorKind};
+
 
 
 // Get URL as user input
 pub fn fetch_url() -> Result<String, std::io::Error> {
     let mut url_str: String = String::new();
-    print!("[>] Enter URL('quit' to exit): ");
+    print!("[>] Enter {}('{}' to exit): ", "URL".green(), "quit".red());
 
     // Flush stdout
     match std::io::stdout().flush() {
         Ok(v) => v,
         Err(_e) => {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"[-] Failed to flush STDOUT!"));
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Failed to flush STDOUT!"));
         },
     };
 
@@ -23,7 +24,7 @@ pub fn fetch_url() -> Result<String, std::io::Error> {
     match std::io::stdin().read_line(&mut url_str){
         Ok(v) => v,
         Err(_e) => {
-            return Err(Error::new(ErrorKind::InvalidInput,"[-] Failed to readline!"));
+            return Err(Error::new(ErrorKind::InvalidInput,"Failed to readline!"));
         }, 
     };   
 
@@ -58,14 +59,6 @@ pub async fn fetch_pe(url: Url) -> Result<Vec<u8>, AppError> {
         }
     };
 
-
-    let content_len = match resp.content_length() {
-        Some(val) => val,
-        None => {
-            return Err(AppError{description: String::from("Fetched PE is empty :(")});
-        }
-    };
-
     let pe_bytes = match resp.bytes().await {
         Ok(val) => val,
         Err(e) => {
@@ -75,8 +68,8 @@ pub async fn fetch_pe(url: Url) -> Result<Vec<u8>, AppError> {
     };
 
     let pe_bytes: Vec<u8> = pe_bytes.as_ref().to_vec();
-    println!("[i] PE Bytes fetched: {}", pe_bytes.len());
+    let __print_val = format!("{}", pe_bytes.len());
+    println!("[i] PE Bytes fetched: {}", __print_val.purple());
 
-    Ok(pe_bytes)
-                   
+    Ok(pe_bytes)                  
 }
