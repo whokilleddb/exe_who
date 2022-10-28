@@ -11,8 +11,6 @@ memexec = "0.2"
 enigo = "0.0.14"
 ctrlc = "3.2.3"
 walkdir = "2.2.9" 
-winapi = {version = "0.3.9", features =["processthreadsapi","memoryapi"]}
-kernel32-sys = "0.2.2"
 colored = "2.0.0"
 reqwest = { version = "0.11"}
 tokio = { version = "1", features = ["full"] }

