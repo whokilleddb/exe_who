@@ -11,6 +11,7 @@ C:\Users\User\Codes\exe_who> cargo build --release
 
 # Current Features
 - Patch ETW
+- Patch AMSI
 - Sandbox Detection
   - User Activity Detection
   - Check for Sandbox Drivers
