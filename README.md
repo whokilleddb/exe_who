@@ -7,11 +7,12 @@ Compiling is as easy as:
 ```bash
 C:\Users\User\Codes\exe_who> cargo build --release
 ```
-![No PEs](https://github.com/whokilleddb/exe_who/blob/main/img/poc.png?raw=true)
-
 # Current Features
 - Patch ETW
 - Sandbox Detection
   - User Activity Detection
+  - Check for Sandbox Drivers
+  - Check for Sleep Patching
+  - Check Filename Hash
 - Check for EDR drivers
 - Fetch PEs and DLLs and run them in-memory
