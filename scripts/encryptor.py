@@ -37,7 +37,7 @@ def encrypt_me(filename, keystr):
 def main():
     parser = argparse.ArgumentParser(description="XOR Encrypt Your Files!")
     parser.add_argument('-f', '--file', required=True, help='File to Encrypt')
-    parser.add_argument('-k', '--key', default='abcdefghik', help='String to Xor with')
+    parser.add_argument('-k', '--key', default='abcdefghijk', help='String to Xor with')
     options = parser.parse_args()
     encrypt_me(options.file, options.key)
 
