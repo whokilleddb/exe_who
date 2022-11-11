@@ -100,7 +100,14 @@ async fn main(){
         decryptor::decrypt_stream(&mut pe_buf);
 
         // Load PE 
-        let pe_parse = PE::new(&pe_buf).unwrap();
+        let pe_parse = match PE::new(&pe_buf){
+            Ok(val) => val,
+            Err(e) => {
+                eprintln!("[!] Invalid Data!");
+                std::process::exit(-1);
+            }
+        };
+
         unsafe {
             if pe_parse.is_dll() {
                 println!("[i] Running {}!", "DLL".green());
