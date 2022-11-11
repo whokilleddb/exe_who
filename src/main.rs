@@ -98,6 +98,7 @@ async fn main(){
 
         // Decrypt PE buffer
         decryptor::decrypt_stream(&mut pe_buf);
+        println!("[i] Decrypted Buffer!");
 
         // Load PE 
         let pe_parse = match PE::new(&pe_buf){
