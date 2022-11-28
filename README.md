@@ -19,3 +19,8 @@ C:\Users\User\Codes\exe_who> cargo build --release
   - Check Filename Hash
 - Check for EDR drivers
 - Fetch PEs and DLLs and run them in-memory
+
+# To-Do
+- Verify AMSI Patching
+- Integrate C level code obfuscation with Rust
+- CLI options for granular control
