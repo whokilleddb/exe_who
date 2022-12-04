@@ -14,12 +14,40 @@ fn get_interactive_mode(cmd_line: &mut user_struct::CmdOptions) -> Result <(), B
     let _get_choice = | _user_input: String | {
         true
     };
-    print!("[i] Enter URL of remote PE: ");
-    match io::stdout().flush(){
-        Ok(_v) => _v,
-        Err(e) => return Err(Box::new(e)),
-    }; 
-    io::stdin().read_line(&mut cmd_line.url).unwrap();
+
+    // Get User input 
+    let user_input = |msg: &str| {
+        let mut buf: String = String::new();
+        
+        print!("[i] {}", msg);
+        match io::stdout().flush(){
+            Ok(_v) => _v,
+            Err(e) => {
+                eprintln!("[!] Error occured as: {}", e);
+                return None;
+            },
+        };
+
+        match io::stdin().read_line(&mut buf){
+            Ok(_v) => _v,
+            Err(e) => {
+                eprintln!("[!] Error occured as: {}", e);
+                return None;
+            },
+        };
+        
+        buf = buf.trim().to_string();
+        Some(buf.clone())
+    };
+
+    // Get URL
+    cmd_line.url = match user_input("Enter remote PE url: ") {
+        Some(val) => val.to_string(),
+        None => return Err("Failed to read remote PE URL!".into()),
+    };
+
+    // Check for encryption
+
     Ok(())
 }
 
@@ -56,6 +84,7 @@ async fn main(){
             }
         };
     }
+    println!("{}",cmd_options);
     set_ctrl_c_handler(cmd_options.quiet);
 
 }
