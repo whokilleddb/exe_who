@@ -15,7 +15,7 @@ pub struct CmdOptions {
     pub interactive: bool,            
 
     /// Url to fetch executable from
-    #[arg(short, long)]
+    #[arg(short, long, conflicts_with = "interactive", default_value_t=String::new())]
     pub url: String,            
     
     /// Incoming executable is encrypted
@@ -51,12 +51,6 @@ pub struct CmdOptions {
 /// Properly display values
 impl fmt::Display for CmdOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Check if the loader is running in interactive mode!
-        if self.interactive {
-            write!(f, "[i] Loader running in interactive mode!")
-        }
-        else {
-            write!(f, "[i] URL: {:?}\n[i] Encrypted: {}\r\n[i] Decryption Key: {:?}\r\n[i] Patch AMSI: {}\r\n[i] Patch ETW: {}\r\n[i] Detect Sandbox: {}\r\n[i] Quiet Mode: {}\r\n[i] Verbose Mode: {}\r\n", self.url, self.enc, self.key, self.patch_amsi, self.patch_etw, self.detect_sandbox, self.quiet, self.verbose)
-        }
+        write!(f, "[i] URL: {:?}\n[i] Encrypted: {}\r\n[i] Decryption Key: {:?}\r\n[i] Patch AMSI: {}\r\n[i] Patch ETW: {}\r\n[i] Detect Sandbox: {}\r\n[i] Quiet Mode: {}\r\n[i] Verbose Mode: {}\r\n", self.url, self.enc, self.key, self.patch_amsi, self.patch_etw, self.detect_sandbox, self.quiet, self.verbose)
     }
 }

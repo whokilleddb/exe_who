@@ -1,9 +1,27 @@
 //use url::Url;
 use ctrlc;
+use std::io;
 use clap::Parser;
+use std::io::Write;
+use std::error::Error;
 
 /// User defined modules
 mod user_struct;
+
+/// Function to get information interactive mode
+fn get_interactive_mode(cmd_line: &mut user_struct::CmdOptions) -> Result <(), Box<dyn Error>> {
+    // Closure to read user input and return a boolean to Y/N questions
+    let _get_choice = | _user_input: String | {
+        true
+    };
+    print!("[i] Enter URL of remote PE: ");
+    match io::stdout().flush(){
+        Ok(_v) => _v,
+        Err(e) => return Err(Box::new(e)),
+    }; 
+    io::stdin().read_line(&mut cmd_line.url).unwrap();
+    Ok(())
+}
 
 /// Ctrl-C Handler
 fn set_ctrl_c_handler(quiet: bool) {
@@ -29,7 +47,15 @@ fn set_ctrl_c_handler(quiet: bool) {
 #[tokio::main]
 async fn main(){
     let mut cmd_options = user_struct::CmdOptions::parse();
-   
+    if cmd_options.interactive {
+        match get_interactive_mode(&mut cmd_options){
+            Ok(_v) => _v,
+            Err(e) => {
+                eprintln!("[!] Error occured as: {:?}", e);
+                std::process::exit(-2);
+            }
+        };
+    }
     set_ctrl_c_handler(cmd_options.quiet);
-    println!("{}", cmd_options);
+
 }
