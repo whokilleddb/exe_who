@@ -15,7 +15,7 @@ pub struct CmdOptions {
     pub interactive: bool,            
 
     /// Url to fetch executable from
-    #[arg(short, long, conflicts_with = "interactive", default_value_t=String::new())]
+    #[arg(short, long, conflicts_with = "interactive")]
     pub url: String,            
     
     /// Incoming executable is encrypted
