@@ -9,14 +9,9 @@ use std::error::Error;
 mod user_struct;
 
 /// Function to get information interactive mode
-fn get_interactive_mode(cmd_line: &mut user_struct::CmdOptions) -> Result <(), Box<dyn Error>> {
-    // Closure to read user input and return a boolean to Y/N questions
-    let _get_choice = | _user_input: String | {
-        true
-    };
-
+fn interactive_mode_setup(cmd_line: &mut user_struct::CmdOptions) -> Result <(), Box<dyn Error>> {
     // Get User input 
-    let user_input = |msg: &str| {
+    let get_user_input = |msg: &str| {
         let mut buf: String = String::new();
         
         print!("[i] {}", msg);
@@ -40,16 +35,45 @@ fn get_interactive_mode(cmd_line: &mut user_struct::CmdOptions) -> Result <(), B
         Some(buf.clone())
     };
 
-    // Get URL
-    cmd_line.url = match user_input("Enter remote PE url: ") {
-        Some(val) => val.to_string(),
-        None => return Err("Failed to read remote PE URL!".into()),
+    // Closure to read user input and return a boolean to Y/N questions
+    let get_choice = | msg: &str | {
+        let user_input = get_user_input(msg).unwrap();
+        let choice = match user_input.as_str().chars().next(){
+            Some(_v) => {
+                let ch = _v.to_ascii_uppercase();
+                if ch == 'Y' {
+                    true
+                }
+                else {
+                    false
+                }
+            },
+            None => false
+        };
+        choice
     };
 
+    // Get URL
+    loop {
+        let _url = match get_user_input("Enter remote PE url: ") {
+            Some(val) => val.to_string(),
+            None => return Err("Failed to read remote PE URL!".into()),
+        };
+
+        if  !_url.is_empty() {
+            cmd_line.url = _url;
+            break;
+        }
+        eprintln!("[!] URL value cannot be empty!");
+    }
+
+
     // Check for encryption
+    cmd_line.enc = get_choice("Is the incoming binary encrypted?(y/N): ");
 
     Ok(())
 }
+
 
 /// Ctrl-C Handler
 fn set_ctrl_c_handler(quiet: bool) {
@@ -71,12 +95,11 @@ fn set_ctrl_c_handler(quiet: bool) {
 }
 
 
-
 #[tokio::main]
 async fn main(){
     let mut cmd_options = user_struct::CmdOptions::parse();
     if cmd_options.interactive {
-        match get_interactive_mode(&mut cmd_options){
+        match interactive_mode_setup(&mut cmd_options){
             Ok(_v) => _v,
             Err(e) => {
                 eprintln!("[!] Error occured as: {:?}", e);
