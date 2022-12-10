@@ -51,6 +51,19 @@ pub struct CmdOptions {
 /// Properly display values
 impl fmt::Display for CmdOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[i] URL: {:?}\n[i] Encrypted: {}\r\n[i] Decryption Key: {:?}\r\n[i] Patch AMSI: {}\r\n[i] Patch ETW: {}\r\n[i] Detect Sandbox: {}\r\n[i] Quiet Mode: {}\r\n[i] Verbose Mode: {}\r\n", self.url, self.enc, self.key, self.patch_amsi, self.patch_etw, self.detect_sandbox, self.quiet, self.verbose)
+        let printing_mode = {
+            if self.quiet {
+                "Quiet"
+            }
+
+            else if self.verbose {
+                "Verbose"
+            }
+
+            else {
+                "Normal"
+            }
+        };
+        write!(f, "[i] URL: {:?}\n[i] Encrypted: {}\r\n[i] Decryption Key: {:?}\r\n[i] Patch AMSI: {}\r\n[i] Patch ETW: {}\r\n[i] Detect Sandbox: {}\r\n[i] Printing Mode: {}\r\n", self.url, self.enc, self.key, self.patch_amsi, self.patch_etw, self.detect_sandbox, printing_mode)
     }
 }

