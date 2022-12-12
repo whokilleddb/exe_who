@@ -18,7 +18,8 @@ C:\Users\User\Codes\exe_who> cargo build --release
   - Check for Sleep Patching
   - Check Filename Hash
 - Check for EDR drivers
-- Fetch PEs and DLLs and run them in-memory
+- [Experimental] Save Payload in Clipboard buffer
+- Move Binary to Another location
 
 # To-Do
 - Verify AMSI Patching

