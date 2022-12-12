@@ -10,10 +10,10 @@ mod user_struct;
 
 /// Function to get information interactive mode
 fn interactive_mode_setup(cmd_line: &mut user_struct::CmdOptions) -> Result <(), Box<dyn Error>> {
-    // Get User input 
+    // Get User input
     let get_user_input = |msg: &str| {
         let mut buf: String = String::new();
-        
+
         print!("[i] {}", msg);
         match io::stdout().flush(){
             Ok(_v) => _v,
@@ -30,7 +30,7 @@ fn interactive_mode_setup(cmd_line: &mut user_struct::CmdOptions) -> Result <(),
                 return None;
             },
         };
-        
+
         buf = buf.trim().to_string();
         Some(buf.clone())
     };
@@ -77,7 +77,7 @@ fn interactive_mode_setup(cmd_line: &mut user_struct::CmdOptions) -> Result <(),
                 Some(val) => val.to_string(),
                 None => return Err("Failed to read decryption key!".into()),
             };
-    
+
             if  !_key.is_empty() {
                 cmd_line.key = Some(_key);
                 break;
@@ -133,7 +133,7 @@ fn set_ctrl_c_handler(quiet: bool) {
             if !quiet {
                 eprintln!("\n[i] Failed to set control handler!");
             }
-            std::process::exit(-1);   
+            std::process::exit(-1);
         }
     }
 }
