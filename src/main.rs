@@ -72,7 +72,7 @@ fn main() {
                 .action(ArgAction::SetTrue)
         )
         .get_matches();
-    
-    let mut loader_options = LoaderOptions::new();
-    loader_options.parse(matches);
+
+    let loader_options = LoaderOptions::new(matches).unwrap();
+    println!("{}", loader_options);
 }
