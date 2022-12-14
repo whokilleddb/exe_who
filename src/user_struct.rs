@@ -43,6 +43,13 @@ impl fmt::Display for LoaderOptions {
                           true => "ON",
                           false => "OFF"
                       });
+        match &self.key {
+            Some(v) => {
+                msg = format!("{}[i] Decryption Key:\t\t{}", msg, v);
+            }
+            None => (),
+        }
+            
         write!(f,"{}",msg)
     }
 }
@@ -94,7 +101,8 @@ impl LoaderOptions {
         let detect_sandbox: bool = check_bool("detect_sandbox");
 
         // Get Decreytion Key
-        let key: Option<String> = None;
+        let key: Option<String> = cmds.get_one::<String>("dec_key").cloned();
+
         // Put them all in a struct
         Ok(LoaderOptions {
             url,
