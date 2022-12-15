@@ -1,4 +1,5 @@
 mod user_struct;
+mod misc;
 use crate::user_struct::*;
 use clap::{Arg, Command, ArgAction};
 
@@ -61,8 +62,7 @@ fn main() {
                 .long("move")
                 .help("Move binary to another location")
                 .num_args(0..=1)
-                .require_equals(true)
-                .default_missing_value("%USERPROFILE%/AppData")
+                .default_missing_value("%USERPROFILE%\\AppData")
         )
         .arg(
             Arg::new("use_clipboard")
