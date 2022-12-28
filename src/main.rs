@@ -73,6 +73,18 @@ fn main() {
         )
         .get_matches();
 
-    let loader_options = LoaderOptions::new(matches).unwrap();
-    println!("{}", loader_options);
+    let loader_options = match LoaderOptions::new(matches){
+        Ok(opts) => opts,
+        Err(e) => {
+            eprintln!("[!] Error occured as: {}", e);
+            std::process::exit(-1);
+        }
+    };
+
+    // Print command line arguments
+    if loader_options.verbosity != 0 {
+        println!("{}", loader_options);
+    }
+
+    
 }
