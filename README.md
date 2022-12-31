@@ -22,6 +22,5 @@ C:\Users\User\Codes\exe_who> cargo build --release
 - Move Binary to Another location
 
 # To-Do
-- Verify AMSI Patching
-- Integrate C level code obfuscation with Rust
-- CLI options for granular control
+- Modify AMSI Payload
+- Obfuscate C code
