@@ -9,6 +9,7 @@ extern {
 pub fn patcher(options: &LoaderOptions) {
     // Check for AMSI Patching
     if options.patch_amsi {
+        println!("[i] Attempting to Patch AMSI");
         let ret: i32 = unsafe {
             patch_amsi()
         };
@@ -16,7 +17,10 @@ pub fn patcher(options: &LoaderOptions) {
             eprintln!("[!] Failed to patch AMSI");
         }
         else {
-            println!("[i] Successfully patched AMSI");
+            println!("[i] Successfully patched AMSI\n");
         }
+    }
+    if options.patch_etw {
+        println!("[i] Attempting to Patch ETW");
     }
 }
