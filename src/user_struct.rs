@@ -10,7 +10,6 @@ use crate::misc::expand_env_vars;
 #[derive(Clone)]
 pub struct LoaderOptions {
     pub url: Url,
-    pub verbosity: u32,
     pub patch_amsi: bool,
     pub patch_etw: bool,
     pub detect_sandbox: bool,
@@ -22,11 +21,6 @@ pub struct LoaderOptions {
 impl fmt::Display for LoaderOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut msg = format!("[i] URL\t\t\t\t{}\r\n", self.url);
-        msg = format!("{}[i] Verbosity Level\t\t{}\r\n", msg, match self.verbosity {
-            0 => "Quiet",
-            1 => "Normal",
-            2u32..=u32::MAX => "Verbose"
-        });
         msg = format!("{}[i] AMSI Patching\t\t{}\r\n", 
                       msg,
                       match self.patch_amsi {
@@ -87,22 +81,6 @@ impl LoaderOptions {
             }
         };
 
-        // Get verbosity level
-        let verbose: bool = check_bool("verbose");
-        let quiet: bool = check_bool("quiet");
-
-        let verbosity: u32 = {
-            if verbose {
-                2
-            }
-            else if quiet {
-                0
-            }
-            else {
-                1
-            }
-        };
-
         // check for patch amsi, patch etw and sandbox detection option
         let patch_amsi: bool = check_bool("patch_amsi");
         let patch_etw: bool = check_bool("patch_etw");
@@ -121,7 +99,6 @@ impl LoaderOptions {
         // Put them all in a struct
         Ok(LoaderOptions {
             url,
-            verbosity,
             patch_amsi,
             patch_etw,
             detect_sandbox,

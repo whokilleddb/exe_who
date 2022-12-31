@@ -1,4 +1,5 @@
 mod user_struct;
+mod patcher;
 mod misc;
 use crate::user_struct::*;
 use clap::{Arg, Command, ArgAction};
@@ -14,22 +15,6 @@ fn main() {
                 .long("url")
                 .help("URL to fetch executable from")
                 .required(true)
-        )
-        .arg(
-            Arg::new("verbose")
-                .short('v')
-                .long("verbose")
-                .help("Print verbose outputs")
-                .action(ArgAction::SetTrue)
-                .conflicts_with("quiet")
-        )
-        .arg(
-            Arg::new("quiet")
-                .short('q')
-                .long("quiet")
-                .help("Supress outputs")
-                .action(ArgAction::SetTrue)
-                .conflicts_with("verbose")
         )
         .arg(
             Arg::new("patch_amsi")
@@ -82,9 +67,9 @@ fn main() {
     };
 
     // Print command line arguments
-    if loader_options.verbosity != 0 {
-        println!("{}", loader_options);
-    }
+    println!("{}", loader_options);
+    
 
+    patcher::patcher(&loader_options);
     
 }

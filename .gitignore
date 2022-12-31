@@ -14,3 +14,18 @@ Cargo.lock
 
 # Test files
 test*
+
+# DLLs and intermediates
+*.lib
+*/*.lib
+*.exp
+*/*.exp
+*.dll
+*/*.dll
+*.obj
+*/*.obj
+
+.\out
+.\out\*
+.\obj\
+.\obj\*
