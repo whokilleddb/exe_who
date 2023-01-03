@@ -32,4 +32,4 @@ echo [i] Copying DLL
 copy .\out\patcher.dll .\target\debug\
 
 echo [i] Test Run
-cargo run -- --url https://google.com --pa
+cargo run -- --url https://google.com --pa --pe

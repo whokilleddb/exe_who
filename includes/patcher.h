@@ -2,3 +2,5 @@
 #pragma once
 
 extern EXPORT int WINAPI patch_amsi();
+
+extern EXPORT int WINAPI patch_etw();

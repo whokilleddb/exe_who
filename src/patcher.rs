@@ -4,6 +4,7 @@ use crate::user_struct::LoaderOptions;
 
 extern {
     fn patch_amsi()->i32;
+    fn patch_etw()->i32;
 }
 
 pub fn patcher(options: &LoaderOptions) {
@@ -22,5 +23,15 @@ pub fn patcher(options: &LoaderOptions) {
     }
     if options.patch_etw {
         println!("[i] Attempting to Patch ETW");
+
+        let ret: i32 = unsafe {
+            patch_etw()
+        };
+        if ret <0 {
+            eprintln!("[!] Failed to patch ETW");
+        }
+        else {
+            println!("[i] Successfully patched ETW\n");
+        }
     }
 }
