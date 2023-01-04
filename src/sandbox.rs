@@ -47,6 +47,7 @@ fn t1497_001()->bool{
     userinfo.insert("Hostname", Some(whoami::hostname()));
     userinfo.insert("Username", Some(whoami::username()));
 
+    // Check for strings
     for (k, v) in userinfo.iter(){
         if has_sus_str(v.clone()) {
             println!("[i] {} contains a suspicious string!", k);
