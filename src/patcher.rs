@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use crate::user_struct::LoaderOptions;
-#[link(name = ".\\out\\patcher", kind = "static")]
+#[link(name = ".\\out\\exe_who", kind = "static")]
 
 extern {
     fn patch_amsi()->i32;

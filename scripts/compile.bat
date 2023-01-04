@@ -21,15 +21,24 @@ echo [!] Compiling Patcher
 cl.exe /D_USRDLL /D_WINDLL /W0 /c /I .\includes src\patcher.c
 if %errorlevel% neq 0 exit /b %errorlevel%
 move patcher.obj .\obj\
-link.exe /DLL .\obj\rewrite.obj .\obj\patcher.obj /OUT:out\patcher.dll
 if %errorlevel% neq 0 exit /b %errorlevel%
+
+echo [!] Compiling Sandbox Detection Modules
+cl.exe /D_USRDLL /D_WINDLL /W0 /c /I .\includes src\sandbox_detection.c
+if %errorlevel% neq 0 exit /b %errorlevel%
+move sandbox_detection.obj .\obj\
+
+echo [!] Linking all modules together
+link.exe /DLL .\obj\sandbox_detection.obj .\obj\rewrite.obj .\obj\patcher.obj /OUT:out\exe_who.dll
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 
 echo [i] Checking Rust Sources
 cargo check
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 echo [i] Copying DLL 
-copy .\out\patcher.dll .\target\debug\
+copy .\out\exe_who.dll .\target\debug\
 
 echo [i] Test Run
-cargo run -- --url https://google.com --pa --da
+cargo run -- --url https://google.com --pa --ds --pe
