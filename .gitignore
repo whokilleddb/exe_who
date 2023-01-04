@@ -25,7 +25,10 @@ test*
 *.obj
 */*.obj
 
-.\out
+.\out\
 .\out\*
 .\obj\
 .\obj\*
+
+# VSConde file
+.vscode\

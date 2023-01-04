@@ -1,6 +1,8 @@
 mod user_struct;
 mod patcher;
 mod misc;
+mod sandbox;
+use std::process::exit;
 use crate::user_struct::*;
 use clap::{Arg, Command, ArgAction};
 
@@ -62,7 +64,7 @@ fn main() {
         Ok(opts) => opts,
         Err(e) => {
             eprintln!("[!] Error occured as: {}", e);
-            std::process::exit(-1);
+            exit(-1);
         }
     };
 
@@ -71,5 +73,12 @@ fn main() {
     
 
     patcher::patcher(&loader_options);
-    
+    if loader_options.detect_sandbox {
+        println!("[i] Detecting Sandbox\n");
+        if sandbox::is_sandbox() {
+            eprintln!("[!] Possibly in a Sandbox'd environment");
+            eprintln!("[!] Exiting!!");
+            exit(-2);
+        }
+    }    
 }
