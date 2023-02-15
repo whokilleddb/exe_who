@@ -36,7 +36,8 @@ Build Windows static binary from Ubuntu Linux
 - Fetch PEs and DLLs and run them in-memory
 
 # TODO
-- [X] Update README.mdwith cross compilation instructions
-- [ ] Update vulnerable crates: rust-crypto, time, rustc-serialize
-- [ ] Update outdated non-vulnerable crates: windows
+- [X] Update README.md with cross compilation instructions
+- [X] Update vulnerable crates: rust-crypto, time, rustc-serialize
+- [X] Update outdated non-vulnerable crates: windows
 - [ ] Cargo fmt & cargo clippy
+- [ ] Ditch rust-crypto for a maintained crate
