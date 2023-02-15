@@ -1,8 +1,8 @@
 use colored::Colorize;
+use enigo::Enigo;
 use md5::{Digest, Md5};
 use sha1::Sha1;
 use sha2::Sha256;
-use enigo::Enigo;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
@@ -144,8 +144,8 @@ fn mouse_activity_sleep_patch() -> bool {
         return false;
     }
 
-    let lower_limit = 9050 as u128;
-    let upper_limit = 10050 as u128;
+    let lower_limit = 9050_u128;
+    let upper_limit = 10050_u128;
     let delta: u128 = elapsed.as_millis();
     if delta < lower_limit || delta > upper_limit {
         return false;
@@ -249,11 +249,7 @@ fn check_filename_hash() -> bool {
         .expect("Failed to extract file name")
         .to_string_lossy();
 
-    if md5_hash[..] == file_name || sha256_hash[..] == file_name || sha1_hash[..] == file_name {
-        return false;
-    } else {
-        return true;
-    }
+    !(md5_hash[..] == file_name || sha256_hash[..] == file_name || sha1_hash[..] == file_name)
 }
 
 pub fn check_sandbox() -> bool {
@@ -265,10 +261,10 @@ pub fn check_sandbox() -> bool {
     let mut flag = mouse_activity_sleep_patch();
 
     println!("[i] Checking for {}", "Sandbox Files".red());
-    flag = flag & check_sandbox_files();
+    flag &= check_sandbox_files();
 
     println!("[i] Checking for {}", "Filename Hash".yellow());
-    flag = flag & check_filename_hash();
+    flag &= check_filename_hash();
 
     if !flag {
         eprintln!("[!] {}", "Sandbox Environment Suspected".red());

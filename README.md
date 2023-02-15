@@ -40,5 +40,5 @@ Build Windows static binary from Ubuntu Linux
 - [X] Update vulnerable crates: rust-crypto, time, rustc-serialize
 - [X] Update outdated non-vulnerable crates: windows
 - [X] Cargo fmt
-- [ ] Cargo clippy
+- [X] Cargo clippy
 - [X] Ditch rust-crypto for maintained crates : [MD5](https://github.com/RustCrypto/hashes/tree/master/md5), [SHA1](https://github.com/RustCrypto/hashes/tree/master/sha1), [SHA2](https://github.com/RustCrypto/hashes/tree/master/sha2)

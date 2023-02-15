@@ -1,11 +1,9 @@
 use colored::Colorize;
-use ctrlc;
-use memexec;
 use memexec::peloader::def::DLL_PROCESS_ATTACH;
 use memexec::peparser::PE;
 use url::Url;
 
-mod decryptor;
+//mod decryptor;
 mod detector;
 mod error;
 mod fetch;
@@ -92,7 +90,7 @@ async fn main() {
         };
 
         // Fetch PE
-        let mut pe_buf = match fetch::fetch_pe(url).await {
+        let pe_buf = match fetch::fetch_pe(url).await {
             Ok(_v) => _v,
             Err(e) => {
                 let err = format!("{}", e);
@@ -108,7 +106,7 @@ async fn main() {
         // Load PE
         let pe_parse = match PE::new(&pe_buf) {
             Ok(val) => val,
-            Err(e) => {
+            Err(_) => {
                 eprintln!("[!] Invalid Data!");
                 std::process::exit(-1);
             }
