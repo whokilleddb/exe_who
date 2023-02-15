@@ -22,7 +22,7 @@ Build Windows binary from Ubuntu Linux
 
 Build Windows static binary from Ubuntu Linux
 - `sudo apt install libssl-dev`
--`RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target x86_64-pc-windows-gnu` 
+- `RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target x86_64-pc-windows-gnu` 
 
 # Current Features
 - Patch ETW
@@ -39,5 +39,6 @@ Build Windows static binary from Ubuntu Linux
 - [X] Update README.md with cross compilation instructions
 - [X] Update vulnerable crates: rust-crypto, time, rustc-serialize
 - [X] Update outdated non-vulnerable crates: windows
-- [ ] Cargo fmt & cargo clippy
+- [X] Cargo fmt
+- [ ] Cargo clippy
 - [ ] Ditch rust-crypto for a maintained crate
