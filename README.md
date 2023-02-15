@@ -15,7 +15,14 @@ C:\Users\User\Codes\exe_who> cargo build --release
 ```
 ![No PEs](https://github.com/whokilleddb/exe_who/blob/main/img/poc.png?raw=true)
 
+## Cross compilation
+Build Windows binary from Ubuntu Linux
+- `sudo apt install libssl-dev`
+- `cargo build --target x86_64-pc-windows-gnu --release`
 
+Build Windows static binary from Ubuntu Linux
+- `sudo apt install libssl-dev`
+-`RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target x86_64-pc-windows-gnu` 
 
 # Current Features
 - Patch ETW
@@ -27,3 +34,9 @@ C:\Users\User\Codes\exe_who> cargo build --release
   - Check Filename Hash
 - Check for EDR drivers
 - Fetch PEs and DLLs and run them in-memory
+
+# TODO
+- [X] Update README.mdwith cross compilation instructions
+- [ ] Update vulnerable crates: rust-crypto, time, rustc-serialize
+- [ ] Update outdated non-vulnerable crates: windows
+- [ ] Cargo fmt & cargo clippy
