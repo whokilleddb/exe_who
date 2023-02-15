@@ -41,4 +41,4 @@ Build Windows static binary from Ubuntu Linux
 - [X] Update outdated non-vulnerable crates: windows
 - [X] Cargo fmt
 - [ ] Cargo clippy
-- [ ] Ditch rust-crypto for a maintained crate
+- [X] Ditch rust-crypto for maintained crates : [MD5](https://github.com/RustCrypto/hashes/tree/master/md5), [SHA1](https://github.com/RustCrypto/hashes/tree/master/sha1), [SHA2](https://github.com/RustCrypto/hashes/tree/master/sha2)

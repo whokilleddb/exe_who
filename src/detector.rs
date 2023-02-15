@@ -1,8 +1,7 @@
 use colored::Colorize;
-use crypto::digest::Digest;
-use crypto::md5::Md5;
-use crypto::sha1::Sha1;
-use crypto::sha2::Sha256;
+use md5::{Digest, Md5};
+use sha1::Sha1;
+use sha2::Sha256;
 use enigo::Enigo;
 use std::collections::HashMap;
 use std::env;
@@ -234,19 +233,23 @@ fn check_filename_hash() -> bool {
         }
     };
 
-    md5.input(&buffer);
-    sha256.input(&buffer);
-    sha1.input(&buffer);
+    md5.update(&buffer);
+    sha256.update(&buffer);
+    sha1.update(&buffer);
 
-    let md5_hash = md5.result_str();
-    let sha256_hash = sha256.result_str();
-    let sha1_hash = sha1.result_str();
+    let md5 = md5.finalize();
+    let sha256 = sha256.finalize();
+    let sha1 = sha1.finalize();
+    let md5_hash = String::from_utf8_lossy(&md5);
+    let sha256_hash = String::from_utf8_lossy(&sha256);
+    let sha1_hash = String::from_utf8_lossy(&sha1);
+
     let file_name = path
         .file_stem()
-        .expect("Failed to extact file name")
+        .expect("Failed to extract file name")
         .to_string_lossy();
 
-    if md5_hash == file_name || sha256_hash == file_name || sha1_hash == file_name {
+    if md5_hash[..] == file_name || sha256_hash[..] == file_name || sha1_hash[..] == file_name {
         return false;
     } else {
         return true;
