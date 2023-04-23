@@ -7,6 +7,9 @@ For example, [Havoc](https://github.com/HavocFramework/Havoc) native payloads ge
  
 However, you can run the same in-memory without spawnning a new process using the repository as:
 ![](./img/havoc_inmemory.png)
+
+Here in an example of the tool bypassing `SentinelOne` to run `mimikatz`
+![](./img/sentinelone.png)
  
 # Compile and Build!
 Compiling is as easy as:
