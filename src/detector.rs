@@ -1,5 +1,5 @@
 use colored::Colorize;
-use enigo::Enigo;
+use enigo::*;
 use md5::{Digest, Md5};
 use sha1::Sha1;
 use sha2::Sha256;
@@ -10,6 +10,7 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::time::Instant;
 use walkdir::WalkDir;
+use enigo::MouseControllable;
 
 pub fn detect_edrs() -> bool {
     let mut b_edr = false;
@@ -123,7 +124,8 @@ pub fn detect_edrs() -> bool {
 // Check for mouse pointer activity and sleep patching
 fn mouse_activity_sleep_patch() -> bool {
     // Check initial location
-    let initial_cursor_location: (i32, i32) = Enigo::mouse_location();
+    let enigo = Enigo::new();
+    let initial_cursor_location: (i32, i32) = enigo.mouse_location();
     let ix = initial_cursor_location.0;
     let iy = initial_cursor_location.1;
 
@@ -136,7 +138,7 @@ fn mouse_activity_sleep_patch() -> bool {
     let elapsed = start.elapsed();
 
     // Check cursor final location
-    let final_cursor_location: (i32, i32) = Enigo::mouse_location();
+    let final_cursor_location: (i32, i32) = enigo.mouse_location();
     let fx = final_cursor_location.0;
     let fy = final_cursor_location.1;
 

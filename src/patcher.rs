@@ -2,7 +2,7 @@ use crate::error::AppError;
 use core::ffi::c_void;
 use windows::core::PCSTR;
 use windows::Win32::Foundation::GetLastError;
-use windows::Win32::Foundation::HINSTANCE;
+use windows::Win32::Foundation::HMODULE;
 use windows::Win32::System::LibraryLoader::GetProcAddress;
 use windows::Win32::System::LibraryLoader::LoadLibraryA;
 use windows::Win32::System::Memory::VirtualProtect;
@@ -16,7 +16,7 @@ pub fn patch_etw() -> Result<(), AppError> {
 
     // Get handle to ntdll
     let lplibfilename: PCSTR = PCSTR(b"ntdll.dll\0"[..].as_ptr() as *const u8);
-    let hmodule: HINSTANCE = unsafe {
+    let hmodule: HMODULE = unsafe {
         match LoadLibraryA(lplibfilename) {
             Ok(val) => {
                 if val.0 == 0_isize {
@@ -116,7 +116,7 @@ pub fn patch_amsi() -> Result<(), AppError> {
 
     // Get handle to ntdll
     let lplibfilename: PCSTR = PCSTR(b"amsi.dll\0"[..].as_ptr() as *const u8);
-    let hmodule: HINSTANCE = unsafe {
+    let hmodule: HMODULE = unsafe {
         match LoadLibraryA(lplibfilename) {
             Ok(val) => {
                 if val.0 == 0_isize {
