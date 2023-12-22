@@ -6,18 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-url = "2.3.1"
+url = "2.3"
 memexec = "0.2"
-enigo = "0.0.14"
-ctrlc = "3.2.3"
-walkdir = "2.2.9" 
-colored = "2.0.0"
+enigo = "0.1"
+ctrlc = "3.2"
+walkdir = "2.3" 
+colored = "2.0"
 reqwest = { version = "0.11"}
 tokio = { version = "1", features = ["full"] }
-rust-crypto = "^0.2"
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
 
 [dependencies.windows]
-version = "0.43.0"
+version = "0"
 features = [
     "Win32_System_Memory", 
     "Win32_System_LibraryLoader",

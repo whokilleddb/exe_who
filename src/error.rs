@@ -1,13 +1,13 @@
-// Custom Error 
+// Custom Error
 use std::fmt;
 
 // Structure to refer application errors
 pub struct AppError {
-    pub description: String
+    pub description: String,
 }
 
 // Print error message
-impl fmt::Display for AppError{
+impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.description)
     }
